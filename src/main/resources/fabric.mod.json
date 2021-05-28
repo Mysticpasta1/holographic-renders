@@ -20,6 +20,9 @@
   "entrypoints": {
     "main": [
       "com.mystic.holographicrenders.HolographicRenders"
+    ],
+    "client": [
+      "com.mystic.holographicrenders.client.HolographicRendersClient"
     ]
   },
   "mixins": [
