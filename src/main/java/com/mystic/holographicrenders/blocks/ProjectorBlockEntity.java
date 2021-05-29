@@ -3,8 +3,6 @@ package com.mystic.holographicrenders.blocks;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -36,13 +34,13 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(providerId);
-        renderer.fromTag(tag);
+        renderer.fromTag(tag, this);
 
     }
 
     @Override
     public CompoundTag toTag(CompoundTag tag) {
-        renderer.toTag(tag);
+        renderer.toTag(tag, this);
         return super.toTag(tag);
     }
 

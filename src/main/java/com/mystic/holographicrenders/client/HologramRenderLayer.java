@@ -24,10 +24,9 @@ public class HologramRenderLayer extends RenderLayer {
         super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.getVertexFormat(), original.getDrawMode(), original.getExpectedBufferSize(), original.hasCrumbling(), true, () -> {
             original.startDrawing();
 
-            // Alter GL state
             RenderSystem.enableBlend();
             RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
-            RenderSystem.blendColor(1, 1, 1, 0.75f);
+            RenderSystem.blendColor(1, 1, 1, 0.6f);
         }, () -> {
             RenderSystem.blendColor(1, 1, 1, 1);
             RenderSystem.defaultBlendFunc();
@@ -58,11 +57,11 @@ public class HologramRenderLayer extends RenderLayer {
     public static VertexConsumerProvider.Immediate initBuffers(VertexConsumerProvider.Immediate original) {
         BufferBuilder fallback = ((VertexConsumerProviderImmediateAccessor) original).getFallbackBuffer();
         Map<RenderLayer, BufferBuilder> layerBuffers = ((VertexConsumerProviderImmediateAccessor) original).getLayerBuffers();
-        Map<RenderLayer, BufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
+        /*Map<RenderLayer, BufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
         for (Map.Entry<RenderLayer, BufferBuilder> e : layerBuffers.entrySet()) {
-            remapped.put(HologramRenderLayer.remap(e.getKey()), e.getValue());
-        }
-        return new HologramVertexConsumerProvider(fallback, remapped);
+            remapped.put(HologramRenderLayer.remap(e.getKey()), new BufferBuilder(e.getKey().getExpectedBufferSize()));
+        }*/
+        return new HologramVertexConsumerProvider(fallback, layerBuffers);
     }
 
     public static class HologramVertexConsumerProvider extends VertexConsumerProvider.Immediate {
@@ -71,7 +70,7 @@ public class HologramRenderLayer extends RenderLayer {
             super(fallback, layerBuffers);
         }
 
-        @Override
+        /*@Override
         public VertexConsumer getBuffer(RenderLayer type) {
 
             type = HologramRenderLayer.remap(type);
@@ -97,6 +96,20 @@ public class HologramRenderLayer extends RenderLayer {
             }
 
             return bufferBuilder;
+        }*/
+
+        @Override
+        public void draw(RenderLayer layer) {
+
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
+            RenderSystem.blendColor(1, 1, 1, 0.6f);
+
+            super.draw(layer);
+
+            RenderSystem.blendColor(1, 1, 1, 1);
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.disableBlend();
         }
     }
 }

@@ -1,12 +1,14 @@
 package com.mystic.holographicrenders.client;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import com.mystic.holographicrenders.blocks.ProjectorBlockEntity;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.block.BlockRenderManager;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.util.math.MatrixStack;
@@ -21,6 +23,7 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
 
 import java.util.function.Function;
 
@@ -32,15 +35,16 @@ public abstract class RenderDataProvider<T> {
         this.data = data;
     }
 
+    @Environment(EnvType.CLIENT)
     public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay);
 
-    public void toTag(CompoundTag tag) {
+    public void toTag(CompoundTag tag, ProjectorBlockEntity be) {
         tag.putString("RendererType", getTypeId().toString());
-        tag.put("RenderData", write());
+        tag.put("RenderData", write(be));
     }
 
-    public void fromTag(CompoundTag tag) {
-        read(tag.getCompound("RenderData"));
+    public void fromTag(CompoundTag tag, ProjectorBlockEntity be) {
+        read(tag.getCompound("RenderData"), be);
     }
 
     public static void registerDefaultProviders() {
@@ -51,9 +55,9 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
     }
 
-    protected abstract CompoundTag write();
+    protected abstract CompoundTag write(ProjectorBlockEntity be);
 
-    protected abstract void read(CompoundTag tag);
+    protected abstract void read(CompoundTag tag, ProjectorBlockEntity be);
 
     public abstract Identifier getTypeId();
 
@@ -70,6 +74,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
+        @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
 
             matrices.translate(0, 1.15, 0);
@@ -81,7 +86,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public CompoundTag write() {
+        public CompoundTag write(ProjectorBlockEntity be) {
             CompoundTag tag = new CompoundTag();
             CompoundTag itemTag = new CompoundTag();
             data.toTag(itemTag);
@@ -90,7 +95,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public void read(CompoundTag tag) {
+        public void read(CompoundTag tag, ProjectorBlockEntity be) {
             data = ItemStack.fromTag(tag.getCompound("Item"));
         }
 
@@ -113,6 +118,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
+        @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
             matrices.translate(0, 1.15, 0);
 
@@ -127,14 +133,14 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public CompoundTag write() {
+        public CompoundTag write(ProjectorBlockEntity be) {
             final CompoundTag tag = new CompoundTag();
             tag.putString("BlockId", Registry.BLOCK.getId(data.getBlock()).toString());
             return tag;
         }
 
         @Override
-        public void read(CompoundTag tag) {
+        public void read(CompoundTag tag, ProjectorBlockEntity be) {
             data = Registry.BLOCK.getOrEmpty(Identifier.tryParse(tag.getString("BlockId"))).orElse(Blocks.AIR).getDefaultState();
         }
 
@@ -147,9 +153,13 @@ public abstract class RenderDataProvider<T> {
     public static class EntityProvider extends RenderDataProvider<Entity> {
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "entity");
+        private CompoundTag entityTag = null;
 
         protected EntityProvider(Entity data) {
             super(data);
+            if(data == null) return;
+            entityTag = new CompoundTag();
+            data.saveSelfToTag(entityTag);
         }
 
         public static EntityProvider from(Entity entity) {
@@ -157,9 +167,10 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
+        @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
 
-            if (data == null) return;
+            if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
 
             matrices.translate(0, 1.15, 0);
 
@@ -174,23 +185,24 @@ public abstract class RenderDataProvider<T> {
             entityRenderDispatcher.setRenderShadows(true);
         }
 
+        private boolean tryLoadEntity(World world){
+            if(data != null) return true;
+            if(world == null) return false;
+            data = EntityType.loadEntityWithPassengers(entityTag, world, Function.identity());
+            return data != null;
+        }
+
         @Override
-        public CompoundTag write() {
-            final CompoundTag tag = new CompoundTag();
-            final CompoundTag entityTag = new CompoundTag();
-            if (data == null) {
-                System.err.println("Entity is null!");
-                return tag;
-            }
-            data.saveSelfToTag(entityTag);
+        public CompoundTag write(ProjectorBlockEntity be) {
+            CompoundTag tag = new CompoundTag();
             tag.put("Entity", entityTag);
             return tag;
         }
 
         @Override
-        public void read(CompoundTag tag) {
-            if (MinecraftClient.getInstance().world == null) return;
-            data = EntityType.loadEntityWithPassengers(tag.getCompound("Entity"), MinecraftClient.getInstance().world, Function.identity());
+        public void read(CompoundTag tag, ProjectorBlockEntity be) {
+            entityTag = tag.getCompound("Entity");
+            data = null;
         }
 
         @Override
@@ -215,6 +227,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
+        @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
             if (!cacheValid) loadCache();
 
@@ -266,6 +279,7 @@ public abstract class RenderDataProvider<T> {
             matrices.pop();
         }
 
+        @Environment(EnvType.CLIENT)
         private void loadCache() {
             final ClientWorld world = MinecraftClient.getInstance().world;
 
@@ -293,12 +307,13 @@ public abstract class RenderDataProvider<T> {
             cacheValid = true;
         }
 
+        @Environment(EnvType.CLIENT)
         public void invalidateCache() {
             cacheValid = false;
         }
 
         @Override
-        public CompoundTag write() {
+        public CompoundTag write(ProjectorBlockEntity be) {
             final CompoundTag tag = new CompoundTag();
 
             tag.putLong("Start", data.getLeft().asLong());
@@ -308,7 +323,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public void read(CompoundTag tag) {
+        public void read(CompoundTag tag, ProjectorBlockEntity be) {
             BlockPos start = BlockPos.fromLong(tag.getLong("Start"));
             BlockPos end = BlockPos.fromLong(tag.getLong("End"));
 
@@ -334,17 +349,18 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
+        @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
 
         }
 
         @Override
-        protected CompoundTag write() {
+        protected CompoundTag write(ProjectorBlockEntity be) {
             return new CompoundTag();
         }
 
         @Override
-        protected void read(CompoundTag tag) {
+        protected void read(CompoundTag tag, ProjectorBlockEntity be) {
 
         }
 

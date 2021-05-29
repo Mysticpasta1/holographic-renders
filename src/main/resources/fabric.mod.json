@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "modid",
+  "id": "holographic_renders",
   "version": "${version}",
 
   "name": "Holographic Renders",
-  "description": "Takes Isorenders from the Isometric Renders Mod and projects them holographicly",
+  "description": "Takes Isorenders from the Isometric Renders Mod and projects them holographically",
   "authors": [
-    "Mysticpasta1, Glisco03"
+    "Mysticpasta1, glisco03"
   ],
   "contact": {
     "homepage": "",
@@ -27,7 +27,7 @@
     ]
   },
   "mixins": [
-    "modid.mixins.json"
+    "holographic_renders.mixins.json"
   ],
 
   "depends": {
