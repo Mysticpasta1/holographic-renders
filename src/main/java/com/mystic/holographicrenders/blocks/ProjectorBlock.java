@@ -57,6 +57,11 @@ public class ProjectorBlock extends BlockWithEntity {
         ProjectorBlockEntity be = (ProjectorBlockEntity) world.getBlockEntity(pos);
         final ItemStack playerStack = player.getStackInHand(hand);
 
+        if (playerStack.isEmpty() && player.isSneaking()) {
+            be.setRenderer(RenderDataProvider.AreaProvider.from(pos.add(5, 5, 5), pos.add(-5, -5, -5)));
+            return ActionResult.SUCCESS;
+        }
+
         if (playerStack.getItem() instanceof BlockItem) {
             be.setRenderer(RenderDataProvider.BlockProvider.from(((BlockItem) playerStack.getItem()).getBlock().getDefaultState()));
         } else if (playerStack.getItem() instanceof SpawnEggItem) {

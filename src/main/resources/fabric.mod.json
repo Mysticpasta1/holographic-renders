@@ -16,6 +16,7 @@
   "license": "MIT",
   "icon": "assets/modid/icon.png",
 
+  "accessWidener": "holographicrenders.accesswidener",
   "environment": "*",
   "entrypoints": {
     "main": [

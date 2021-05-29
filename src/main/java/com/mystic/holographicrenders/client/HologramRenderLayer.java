@@ -27,7 +27,7 @@ public class HologramRenderLayer extends RenderLayer {
             // Alter GL state
             RenderSystem.enableBlend();
             RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
-            RenderSystem.blendColor(1, 1, 1, 0.5F);
+            RenderSystem.blendColor(1, 1, 1, 0.75f);
         }, () -> {
             RenderSystem.blendColor(1, 1, 1, 1);
             RenderSystem.defaultBlendFunc();

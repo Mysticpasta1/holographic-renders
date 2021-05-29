@@ -4,6 +4,7 @@
   "package": "com.mystic.holographicrenders.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "BlockModelRendererInvoker",
     "VertexConsumerProviderImmediateAccessor"
   ],
   "client": [
