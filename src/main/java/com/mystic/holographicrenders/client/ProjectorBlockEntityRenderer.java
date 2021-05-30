@@ -11,8 +11,8 @@ import net.minecraft.util.math.Matrix4f;
 public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorBlockEntity> {
 
     private static VertexConsumerProvider.Immediate immediate;
-    public static HologramBlockModelRenderer blockModelRenderer;
 
+    public static HologramBlockModelRenderer blockModelRenderer;
     public ProjectorBlockEntityRenderer(BlockEntityRenderDispatcher dispatcher) {
         super(dispatcher);
     }
@@ -20,7 +20,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
     @Override
     public void render(ProjectorBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (immediate == null) {
-            immediate = HologramRenderLayer.initBuffers((VertexConsumerProvider.Immediate) vertexConsumers);
+            immediate = HologramRenderLayer.initBuffers(MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers());
             blockModelRenderer = new HologramBlockModelRenderer(MinecraftClient.getInstance().getBlockColors());
         }
 
@@ -30,7 +30,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
 
         immediate.draw();
 
-        try {
+        /*try {
 
             final BufferBuilder buffer = (BufferBuilder) vertexConsumers.getBuffer(RenderLayer.getLightning());
             if (!buffer.isBuilding()) buffer.begin(7, VertexFormats.POSITION_COLOR);
@@ -87,11 +87,15 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             vertex(matrix4f, buffer, 0.125f, 0.85f, 0.1f, r, g, b, startAlpha);
         } catch (Exception e) {
 
-        }
+        }*/
     }
 
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {
         buffer.vertex(matrix, x, y, z).color(r, g, b, a).next();
+    }
+
+    public static VertexConsumerProvider.Immediate getImmediate() {
+        return immediate;
     }
 
 }
