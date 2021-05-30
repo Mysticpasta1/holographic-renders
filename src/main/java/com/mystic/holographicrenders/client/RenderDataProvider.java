@@ -6,6 +6,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
@@ -16,12 +17,14 @@ import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
@@ -36,7 +39,7 @@ public abstract class RenderDataProvider<T> {
     }
 
     @Environment(EnvType.CLIENT)
-    public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay);
+    public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be);
 
     public void toTag(CompoundTag tag, ProjectorBlockEntity be) {
         tag.putString("RendererType", getTypeId().toString());
@@ -53,6 +56,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(EntityProvider.ID, () -> new EntityProvider(null));
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(new Pair<>(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
+        RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(""));
     }
 
     protected abstract CompoundTag write(ProjectorBlockEntity be);
@@ -75,7 +79,7 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         @Environment(EnvType.CLIENT)
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
             matrices.translate(0, 1.15, 0);
             matrices.translate(0.5, 0, 0.5);
@@ -119,7 +123,7 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         @Environment(EnvType.CLIENT)
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
             matrices.translate(0, 1.15, 0);
 
             matrices.translate(0.5, 0, 0.5);
@@ -168,7 +172,7 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         @Environment(EnvType.CLIENT)
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
 
@@ -211,6 +215,52 @@ public abstract class RenderDataProvider<T> {
         }
     }
 
+    public static class TextProvider extends RenderDataProvider<String> {
+
+        private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "text");
+
+        public TextProvider(String data) {
+            super(data);
+        }
+
+        @Override
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+
+            matrices.translate(0.5, 0.0, 0.5);
+
+            PlayerEntity closestPlayer = MinecraftClient.getInstance().player;
+            if(closestPlayer != null)
+            {
+                double x = closestPlayer.getX() - be.getPos().getX() - 0.5;
+                double z = closestPlayer.getZ() - be.getPos().getZ() - 0.5;
+                float rot = (float) MathHelper.atan2(z, x);
+                matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
+                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80));
+            }
+
+            matrices.scale(0.1f, -0.1f, 0.1f); //TODO make this usable with scaling sliders
+            matrices.translate(-(MinecraftClient.getInstance().textRenderer.getWidth(data) / 2f), -20, -0.0); //TODO make this usable with translation sliders
+            MinecraftClient.getInstance().textRenderer.draw(matrices, data, 0, 0, 0);
+        }
+
+        @Override
+        protected CompoundTag write(ProjectorBlockEntity be) {
+            CompoundTag compoundTag = new CompoundTag();
+            compoundTag.putString("Text", data);
+            return compoundTag;
+        }
+
+        @Override
+        protected void read(CompoundTag tag, ProjectorBlockEntity be) {
+            data = tag.getString("Text");
+        }
+
+        @Override
+        public Identifier getTypeId() {
+            return ID;
+        }
+    }
+
     public static class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
@@ -228,7 +278,7 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         @Environment(EnvType.CLIENT)
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
             if (!cacheValid) loadCache();
 
             matrices.push();
@@ -350,7 +400,7 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         @Environment(EnvType.CLIENT)
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay) {
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
         }
 

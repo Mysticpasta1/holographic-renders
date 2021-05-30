@@ -8,6 +8,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -69,6 +70,8 @@ public class ProjectorBlock extends BlockWithEntity {
             Entity entity = type.create(world);
             entity.updatePosition(pos.getX(), pos.getY(), pos.getZ());
             be.setRenderer(RenderDataProvider.EntityProvider.from(entity));
+        } else if (playerStack.getItem() == Items.NAME_TAG) {
+            be.setRenderer(new RenderDataProvider.TextProvider(playerStack.getName().asString()));
         } else {
             be.setRenderer(RenderDataProvider.ItemProvider.from(playerStack));
         }

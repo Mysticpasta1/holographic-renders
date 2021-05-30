@@ -20,8 +20,6 @@ public class HologramRenderLayer extends RenderLayer {
 
     private static final Map<RenderLayer, RenderLayer> remappedTypes = new IdentityHashMap<>();
 
-    private final RenderLayer parent;
-
     private HologramRenderLayer(RenderLayer original) {
         super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.getVertexFormat(), original.getDrawMode(), original.getExpectedBufferSize(), original.hasCrumbling(), true, () -> {
             original.startDrawing();
@@ -36,12 +34,6 @@ public class HologramRenderLayer extends RenderLayer {
 
             original.endDrawing();
         });
-        this.parent = original;
-    }
-
-    @Override
-    public boolean equals(@Nullable Object other) {
-        return this == other || this.parent.equals(other);
     }
 
     public static RenderLayer remap(RenderLayer in) {
@@ -53,13 +45,12 @@ public class HologramRenderLayer extends RenderLayer {
     }
 
     public static VertexConsumerProvider.Immediate initBuffers(VertexConsumerProvider.Immediate original) {
-        BufferBuilder fallback = ((VertexConsumerProviderImmediateAccessor) original).getFallbackBuffer();
         Map<RenderLayer, BufferBuilder> layerBuffers = ((VertexConsumerProviderImmediateAccessor) original).getLayerBuffers();
         Map<RenderLayer, BufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
         for (Map.Entry<RenderLayer, BufferBuilder> e : layerBuffers.entrySet()) {
             remapped.put(HologramRenderLayer.remap(e.getKey()), new BufferBuilder(e.getKey().getExpectedBufferSize()));
         }
-        return new HologramVertexConsumerProvider(fallback, remapped);
+        return new HologramVertexConsumerProvider(new BufferBuilder(256), remapped);
     }
 
     public static class HologramVertexConsumerProvider extends VertexConsumerProvider.Immediate {

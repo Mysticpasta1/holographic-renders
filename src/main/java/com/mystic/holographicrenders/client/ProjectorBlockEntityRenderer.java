@@ -25,7 +25,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
         }
 
         matrices.push();
-        entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay);
+        entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
         matrices.pop();
 
         immediate.draw();
@@ -33,7 +33,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
         try {
 
             final BufferBuilder buffer = (BufferBuilder) vertexConsumers.getBuffer(RenderLayer.getLightning());
-            if (!buffer.isBuilding()) buffer.begin(7, VertexFormats.POSITION_COLOR);
+            //if (!buffer.isBuilding()) buffer.begin(7, VertexFormats.POSITION_COLOR);
             final Matrix4f matrix4f = matrices.peek().getModel();
 
             final float r = 0.5f;
