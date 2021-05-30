@@ -28,7 +28,7 @@ public class HologramRenderLayer extends RenderLayer {
 
             RenderSystem.enableBlend();
             RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
-            RenderSystem.blendColor(1, 1, 1, 0.6f);
+            RenderSystem.blendColor(1, 1, 1, 0.6f); //TODO make 0.6F a redstone dependent value out of 15, 0 OFF, 15 FULL OPACITY
         }, () -> {
             RenderSystem.blendColor(1, 1, 1, 1);
             RenderSystem.defaultBlendFunc();
@@ -57,7 +57,7 @@ public class HologramRenderLayer extends RenderLayer {
         Map<RenderLayer, BufferBuilder> layerBuffers = ((VertexConsumerProviderImmediateAccessor) original).getLayerBuffers();
         Map<RenderLayer, BufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
         for (Map.Entry<RenderLayer, BufferBuilder> e : layerBuffers.entrySet()) {
-            remapped.put(HologramRenderLayer.remap(e.getKey()), e.getValue());
+            remapped.put(HologramRenderLayer.remap(e.getKey()), new BufferBuilder(e.getKey().getExpectedBufferSize()));
         }
         return new HologramVertexConsumerProvider(fallback, remapped);
     }

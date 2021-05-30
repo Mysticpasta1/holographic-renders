@@ -30,7 +30,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
 
         immediate.draw();
 
-        /*try {
+        try {
 
             final BufferBuilder buffer = (BufferBuilder) vertexConsumers.getBuffer(RenderLayer.getLightning());
             if (!buffer.isBuilding()) buffer.begin(7, VertexFormats.POSITION_COLOR);
@@ -87,7 +87,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             vertex(matrix4f, buffer, 0.125f, 0.85f, 0.1f, r, g, b, startAlpha);
         } catch (Exception e) {
 
-        }*/
+        }
     }
 
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {
