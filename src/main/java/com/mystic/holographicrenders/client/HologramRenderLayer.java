@@ -59,7 +59,7 @@ public class HologramRenderLayer extends RenderLayer {
         for (Map.Entry<RenderLayer, BufferBuilder> e : layerBuffers.entrySet()) {
             remapped.put(HologramRenderLayer.remap(e.getKey()), e.getValue());
         }
-        return new HologramVertexConsumerProvider(fallback, layerBuffers);
+        return new HologramVertexConsumerProvider(fallback, remapped);
     }
 
     public static class HologramVertexConsumerProvider extends VertexConsumerProvider.Immediate {
