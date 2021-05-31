@@ -11,10 +11,10 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 
-public class HologramScreen extends HandledScreen<ScreenHandler> {
+public class ProjectorScreen extends HandledScreen<ScreenHandler> {
     private static final Identifier TEXTURE = new Identifier("holographic_renders", "textures/gui_hologram_projector.png");
 
-    public HologramScreen(ScreenHandler handler, PlayerInventory inventory, Text title) {
+    public ProjectorScreen(ScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
     }
 

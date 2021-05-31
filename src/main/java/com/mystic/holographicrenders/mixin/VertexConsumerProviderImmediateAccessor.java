@@ -12,9 +12,6 @@ import java.util.Map;
 public interface VertexConsumerProviderImmediateAccessor {
 
     @Accessor
-    BufferBuilder getFallbackBuffer();
-
-    @Accessor
     Map<RenderLayer, BufferBuilder> getLayerBuffers();
 
 }

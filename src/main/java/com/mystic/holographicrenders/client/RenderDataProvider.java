@@ -1,7 +1,7 @@
 package com.mystic.holographicrenders.client;
 
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.blocks.ProjectorBlockEntity;
+import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -20,6 +20,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
@@ -56,7 +57,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(EntityProvider.ID, () -> new EntityProvider(null));
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(new Pair<>(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
-        RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(""));
+        RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
     }
 
     protected abstract CompoundTag write(ProjectorBlockEntity be);
@@ -81,9 +82,8 @@ public abstract class RenderDataProvider<T> {
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-            //matrices.translate(0, , 0);
             matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
-            matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
+            //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
             MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformation.Mode.GROUND, light, overlay, matrices, immediate);
@@ -161,7 +161,7 @@ public abstract class RenderDataProvider<T> {
 
         protected EntityProvider(Entity data) {
             super(data);
-            if(data == null) return;
+            if (data == null) return;
             entityTag = new CompoundTag();
             data.saveSelfToTag(entityTag);
         }
@@ -187,9 +187,9 @@ public abstract class RenderDataProvider<T> {
             entityRenderDispatcher.setRenderShadows(true);
         }
 
-        private boolean tryLoadEntity(World world){
-            if(data != null) return true;
-            if(world == null) return false;
+        private boolean tryLoadEntity(World world) {
+            if (data != null) return true;
+            if (world == null) return false;
             data = EntityType.loadEntityWithPassengers(entityTag, world, Function.identity());
             return data != null;
         }
@@ -213,12 +213,16 @@ public abstract class RenderDataProvider<T> {
         }
     }
 
-    public static class TextProvider extends RenderDataProvider<String> {
+    public static class TextProvider extends RenderDataProvider<Text> {
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "text");
 
-        public TextProvider(String data) {
+        protected TextProvider(Text data) {
             super(data);
+        }
+
+        public static TextProvider from(Text text) {
+            return new TextProvider(text);
         }
 
         @Override
@@ -227,8 +231,7 @@ public abstract class RenderDataProvider<T> {
             matrices.translate(0.5, 0.0, 0.5);
 
             PlayerEntity closestPlayer = MinecraftClient.getInstance().player;
-            if(closestPlayer != null)
-            {
+            if (closestPlayer != null) {
                 double x = closestPlayer.getX() - be.getPos().getX() - 0.5;
                 double z = closestPlayer.getZ() - be.getPos().getZ() - 0.5;
                 float rot = (float) MathHelper.atan2(z, x);
@@ -244,13 +247,13 @@ public abstract class RenderDataProvider<T> {
         @Override
         protected CompoundTag write(ProjectorBlockEntity be) {
             CompoundTag compoundTag = new CompoundTag();
-            compoundTag.putString("Text", data);
+            compoundTag.putString("Text", Text.Serializer.toJson(data));
             return compoundTag;
         }
 
         @Override
         protected void read(CompoundTag tag, ProjectorBlockEntity be) {
-            data = tag.getString("Text");
+            data = Text.Serializer.fromJson(tag.getString("Text"));
         }
 
         @Override

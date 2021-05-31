@@ -1,47 +1,30 @@
 package com.mystic.holographicrenders.gui;
 
-import com.mystic.holographicrenders.blocks.ProjectorBlockEntity;
-import com.mystic.holographicrenders.client.RenderDataProvider;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
+import com.mystic.holographicrenders.HolographicRenders;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.SpawnEggItem;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.TranslatableText;
 
-public class HologramScreenHandler extends ScreenHandler {
+public class ProjectorScreenHandler extends ScreenHandler {
     private final Inventory inventory;
 
-    public HologramScreenHandler(int syncId, PlayerInventory playerInventory) {
+    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory) {
         this(syncId, playerInventory, new SimpleInventory(1));
     }
 
-    public HologramScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
-        super(com.mystic.holographicrenders.HolographicRenders.HOLOGRAM_SCREEN_HANDLER, syncId);
+    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
+        super(HolographicRenders.HOLOGRAM_SCREEN_HANDLER, syncId);
         checkSize(inventory, 1);
         this.inventory = inventory;
 
-        inventory.onOpen(playerInventory.player);
-
-        new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 10, 10, new TranslatableText(""));
+        this.addSlot(new Slot(inventory, 0, 80, 35));
 
         int m;
         int l;
-        //Our inventory
-        for (m = 0; m < 1; ++m) {
-            for (l = 0; l < 1; ++l) {
-                this.addSlot(new Slot(inventory, l + m * 3, 12 + l * 18, 17 + m * 18));
-            }
-        }
         //The player inventory
         for (m = 0; m < 3; ++m) {
             for (l = 0; l < 9; ++l) {

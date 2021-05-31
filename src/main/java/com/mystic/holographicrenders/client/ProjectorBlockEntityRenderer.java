@@ -1,8 +1,11 @@
 package com.mystic.holographicrenders.client;
 
-import com.mystic.holographicrenders.blocks.ProjectorBlockEntity;
+import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.util.math.MatrixStack;
@@ -13,6 +16,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
     private static VertexConsumerProvider.Immediate immediate;
 
     public static HologramBlockModelRenderer blockModelRenderer;
+
     public ProjectorBlockEntityRenderer(BlockEntityRenderDispatcher dispatcher) {
         super(dispatcher);
     }
@@ -33,7 +37,6 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
         try {
 
             final BufferBuilder buffer = (BufferBuilder) vertexConsumers.getBuffer(RenderLayer.getLightning());
-            //if (!buffer.isBuilding()) buffer.begin(7, VertexFormats.POSITION_COLOR);
             final Matrix4f matrix4f = matrices.peek().getModel();
 
             final float r = 0.5f;

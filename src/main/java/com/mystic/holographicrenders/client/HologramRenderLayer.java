@@ -9,7 +9,6 @@ import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.render.VertexConsumerProvider;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -17,6 +16,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class HologramRenderLayer extends RenderLayer {
+
+    //TODO refactor this and make it not shit
 
     private static final Map<RenderLayer, RenderLayer> remappedTypes = new IdentityHashMap<>();
 

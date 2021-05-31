@@ -1,21 +1,16 @@
-package com.mystic.holographicrenders.blocks;
+package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
-import com.mystic.holographicrenders.gui.HologramScreenHandler;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
+import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.item.SpawnEggItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
@@ -23,7 +18,6 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, NamedScreenHandlerFactory, ImplementedInventory {
@@ -39,7 +33,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
         this.renderer = renderer;
-        if(sync) {
+        if (sync) {
             this.markDirty();
         }
     }
@@ -77,31 +71,9 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public void markDirty() {
-        final ItemStack itemStack = inventory.get(0);
-
-        if (itemStack.getItem() instanceof BlockItem) {
-            setRenderer(RenderDataProvider.BlockProvider.from(((BlockItem) itemStack.getItem()).getBlock().getDefaultState()), false);
-        } else if (itemStack.getItem() instanceof SpawnEggItem) {
-            EntityType<?> type = ((SpawnEggItem) itemStack.getItem()).getEntityType(itemStack.getTag());
-            Entity entity = type.create(getWorld());
-            entity.updatePosition(getPos().getX(), getPos().getY(), getPos().getZ());
-            setRenderer(RenderDataProvider.EntityProvider.from(entity), false);
-        } else if (itemStack.getItem() == HolographicRenders.AREA_RENDER_ITEM) {
-            CompoundTag tag = itemStack.getOrCreateTag();
-            if(tag.contains("Pos1") && tag.contains("Pos2")){
-                BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
-                BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));
-                setRenderer(RenderDataProvider.AreaProvider.from(pos1, pos2), false);
-            } else {
-                setRenderer(RenderDataProvider.EmptyProvider.INSTANCE, false);
-            }
-        } else if (itemStack.getItem() == Items.NAME_TAG) {
-            setRenderer(new RenderDataProvider.TextProvider(itemStack.getName().asString()), false);
-        } else {
-            setRenderer(RenderDataProvider.ItemProvider.from(itemStack), false);
-        }
+        setRenderer(ItemProjectionHandler.getDataProvider(this, inventory.get(0)), false);
         super.markDirty();
-        if(!world.isClient()){
+        if (!world.isClient()) {
             sync();
         }
     }
@@ -118,6 +90,6 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
-        return new HologramScreenHandler(syncId, playerInventory, this);
+        return new ProjectorScreenHandler(syncId, playerInventory, this);
     }
 }
