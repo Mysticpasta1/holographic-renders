@@ -1,5 +1,7 @@
 package com.mystic.holographicrenders.gui;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -7,6 +9,7 @@ import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.text.TranslatableText;
 
 public class HologramScreenHandler extends ScreenHandler {
     private final Inventory inventory;
@@ -22,6 +25,7 @@ public class HologramScreenHandler extends ScreenHandler {
 
         inventory.onOpen(playerInventory.player);
 
+        new TextFieldWidget(MinecraftClient.getInstance().textRenderer, 0, 0, 10, 10, new TranslatableText(""));
 
         int m;
         int l;

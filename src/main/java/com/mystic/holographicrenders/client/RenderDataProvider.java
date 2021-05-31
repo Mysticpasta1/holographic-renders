@@ -81,8 +81,9 @@ public abstract class RenderDataProvider<T> {
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-            matrices.translate(0, 1.15, 0);
-            matrices.translate(0.5, 0, 0.5);
+            //matrices.translate(0, , 0);
+            matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
+            matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
             MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformation.Mode.GROUND, light, overlay, matrices, immediate);
@@ -124,10 +125,9 @@ public abstract class RenderDataProvider<T> {
         @Override
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-            matrices.translate(0, 1.15, 0);
 
-            matrices.translate(0.5, 0, 0.5);
-            matrices.scale(0.5f, 0.5f, 0.5f);
+            matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
+            matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
@@ -175,11 +175,9 @@ public abstract class RenderDataProvider<T> {
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
-
-            matrices.translate(0, 1.15, 0);
-
-            matrices.translate(0.5, 0, 0.5);
-            matrices.scale(0.5f, 0.5f, 0.5f);
+            
+            matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
+            matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
@@ -284,9 +282,9 @@ public abstract class RenderDataProvider<T> {
             matrices.push();
 
             matrices.translate(0.5, 1, 0.5);
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-            matrices.scale(0.075f, 0.075f, 0.075f);
-            matrices.translate(-cache[0][0].length / 2f, 0, -cache[0].length / 2f);
+            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+            matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
+            matrices.translate(-cache[0][0].length / 2f, 0, -cache[0].length / 2f); //TODO make this usable with translation sliders
 
             BlockPos origin = new BlockPos(Math.min(data.getLeft().getX(), data.getRight().getX()), Math.min(data.getLeft().getY(), data.getRight().getY()), Math.min(data.getLeft().getZ(), data.getRight().getZ()));
 
