@@ -65,27 +65,6 @@ public class ProjectorBlock extends BlockWithEntity {
             player.openHandledScreen(screenHandlerFactory);
         }
 
-        ProjectorBlockEntity be = (ProjectorBlockEntity) world.getBlockEntity(pos);
-        final ItemStack playerStack = player.getStackInHand(hand);
-
-        if (playerStack.isEmpty() && player.isSneaking()) {
-            be.setRenderer(RenderDataProvider.AreaProvider.from(pos.add(5, 5, 5), pos.add(-5, -5, -5)));
-            return ActionResult.SUCCESS;
-        }
-
-        if (playerStack.getItem() instanceof BlockItem) {
-            be.setRenderer(RenderDataProvider.BlockProvider.from(((BlockItem) playerStack.getItem()).getBlock().getDefaultState()));
-        } else if (playerStack.getItem() instanceof SpawnEggItem) {
-            EntityType<?> type = ((SpawnEggItem) playerStack.getItem()).getEntityType(playerStack.getTag());
-            Entity entity = type.create(world);
-            entity.updatePosition(pos.getX(), pos.getY(), pos.getZ());
-            be.setRenderer(RenderDataProvider.EntityProvider.from(entity));
-        } else if (playerStack.getItem() == Items.NAME_TAG) {
-            be.setRenderer(new RenderDataProvider.TextProvider(playerStack.getName().asString()));
-        } else {
-            be.setRenderer(RenderDataProvider.ItemProvider.from(playerStack));
-        }
-
         return ActionResult.SUCCESS;
     }
 

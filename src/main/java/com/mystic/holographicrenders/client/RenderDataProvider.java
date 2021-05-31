@@ -175,7 +175,7 @@ public abstract class RenderDataProvider<T> {
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
-            
+
             matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
