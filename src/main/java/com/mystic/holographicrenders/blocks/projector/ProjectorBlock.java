@@ -126,7 +126,7 @@ public class ProjectorBlock extends BlockWithEntity{
         }
     }
 
-    private static @NotNull Direction getFacing(@NotNull BlockState state) {
+    public static @NotNull Direction getFacing(@NotNull BlockState state) {
         return state.get(PROPERTY_FACING);
     }
 

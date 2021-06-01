@@ -1,6 +1,7 @@
 package com.mystic.holographicrenders.client;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -18,8 +19,11 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
@@ -34,6 +38,8 @@ import java.util.function.Function;
 public abstract class RenderDataProvider<T> {
 
     protected T data;
+
+    public static final DirectionProperty PROPERTY_FACING = Properties.FACING;
 
     protected RenderDataProvider(T data) {
         this.data = data;
@@ -176,10 +182,42 @@ public abstract class RenderDataProvider<T> {
 
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
 
-            matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            switch(ProjectorBlock.getFacing(be.getCachedState()))
+            {
+                case UP:
+                    matrices.translate(1.0, 2.5, 1.0);
+                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+                    break;
+                case DOWN:
+                    matrices.translate(1.0, -0.5, 1.0);
+                    matrices.multiply(Vector3f.POSITIVE_X.getDegreesQuaternion(180));
+                    matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+                    break;
+                case WEST:
+                    matrices.translate(-0.5, 1.0, 1.0);
+                    matrices.multiply(Vector3f.POSITIVE_Z.getDegreesQuaternion(90));
+                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+                    break;
+                case NORTH:
+                    matrices.translate(1.0, 1.0, -0.5);
+                    matrices.multiply(Vector3f.NEGATIVE_X.getDegreesQuaternion(90));
+                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+                    break;
+                case EAST:
+                    matrices.translate(2.5, 1.0, 1.0);
+                    matrices.multiply(Vector3f.NEGATIVE_Z.getDegreesQuaternion(90));
+                    matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+                    break;
+                case SOUTH:
+                    matrices.translate(1.0, 1.0, 2.5);
+                    matrices.multiply(Vector3f.POSITIVE_X.getDegreesQuaternion(90));
+                    matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+                    break;
+            }
+
+
 
             final EntityRenderDispatcher entityRenderDispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
             entityRenderDispatcher.setRenderShadows(false);
