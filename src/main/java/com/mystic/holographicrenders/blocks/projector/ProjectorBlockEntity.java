@@ -10,6 +10,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -50,6 +51,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(providerId);
         renderer.fromTag(tag, this);
 
+        Inventories.fromTag(tag, inventory);
     }
 
     @Override
@@ -66,6 +68,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public CompoundTag toTag(CompoundTag tag) {
         renderer.toTag(tag, this);
+        Inventories.toTag(tag, inventory);
         return super.toTag(tag);
     }
 

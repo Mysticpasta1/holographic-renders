@@ -9,7 +9,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
@@ -19,7 +18,6 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.state.property.DirectionProperty;
@@ -28,7 +26,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
@@ -38,8 +35,6 @@ import java.util.function.Function;
 public abstract class RenderDataProvider<T> {
 
     protected T data;
-
-    public static final DirectionProperty PROPERTY_FACING = Properties.FACING;
 
     protected RenderDataProvider(T data) {
         this.data = data;
@@ -184,8 +179,7 @@ public abstract class RenderDataProvider<T> {
 
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
-            switch(ProjectorBlock.getFacing(be.getCachedState()))
-            {
+            switch (ProjectorBlock.getFacing(be.getCachedState())) {
                 case UP:
                     matrices.translate(1.0, 2.5, 1.0);
                     matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
@@ -216,7 +210,6 @@ public abstract class RenderDataProvider<T> {
                     matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
                     break;
             }
-
 
 
             final EntityRenderDispatcher entityRenderDispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
@@ -306,9 +299,11 @@ public abstract class RenderDataProvider<T> {
 
         private BlockState[][][] cache;
         private boolean cacheValid = false;
+        private final AreaRenderer renderer;
 
         protected AreaProvider(Pair<BlockPos, BlockPos> data) {
             super(data);
+            renderer = new AreaRenderer();
         }
 
         public static AreaProvider from(BlockPos start, BlockPos end) {
@@ -319,6 +314,10 @@ public abstract class RenderDataProvider<T> {
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
             if (!cacheValid) loadCache();
+            if (!renderer.isReady()) {
+                BlockPos origin = new BlockPos(Math.min(data.getLeft().getX(), data.getRight().getX()), Math.min(data.getLeft().getY(), data.getRight().getY()), Math.min(data.getLeft().getZ(), data.getRight().getZ()));
+                renderer.build(cache, origin);
+            }
 
             matrices.push();
 
@@ -327,43 +326,7 @@ public abstract class RenderDataProvider<T> {
             matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
             matrices.translate(-cache[0][0].length / 2f, 0, -cache[0].length / 2f); //TODO make this usable with translation sliders
 
-            BlockPos origin = new BlockPos(Math.min(data.getLeft().getX(), data.getRight().getX()), Math.min(data.getLeft().getY(), data.getRight().getY()), Math.min(data.getLeft().getZ(), data.getRight().getZ()));
-
-            int y = 0;
-            int x;
-            int z;
-
-            for (BlockState[][] twoDim : cache) {
-                matrices.push();
-                z = 0;
-                for (BlockState[] oneDim : twoDim) {
-                    matrices.push();
-                    x = 0;
-                    for (BlockState state : oneDim) {
-
-                        matrices.push();
-
-                        ProjectorBlockEntityRenderer.blockModelRenderer.setCullDirection(Direction.EAST, x != cache[0][0].length - 1);
-                        ProjectorBlockEntityRenderer.blockModelRenderer.setCullDirection(Direction.WEST, x != 0);
-                        ProjectorBlockEntityRenderer.blockModelRenderer.setCullDirection(Direction.SOUTH, z != cache[0].length - 1);
-                        ProjectorBlockEntityRenderer.blockModelRenderer.setCullDirection(Direction.NORTH, z != 0);
-                        ProjectorBlockEntityRenderer.blockModelRenderer.setCullDirection(Direction.UP, y != cache.length - 1);
-                        ProjectorBlockEntityRenderer.blockModelRenderer.setCullDirection(Direction.DOWN, y != 0);
-
-                        ProjectorBlockEntityRenderer.blockModelRenderer.render(MinecraftClient.getInstance().world, MinecraftClient.getInstance().getBlockRenderManager().getModel(state), state, origin.add(x, y, z), matrices, immediate.getBuffer(RenderLayers.getBlockLayer(state)), true, MinecraftClient.getInstance().world.random, state.getRenderingSeed(origin.add(x, y, z)), overlay);
-
-                        matrices.pop();
-                        x++;
-                        matrices.translate(1, 0, 0);
-                    }
-                    matrices.pop();
-                    z++;
-                    matrices.translate(0, 0, 1);
-                }
-                matrices.pop();
-                y++;
-                matrices.translate(0, 1, 0);
-            }
+            renderer.render(matrices);
 
             matrices.pop();
         }
