@@ -37,7 +37,7 @@ public class WorldRendererMixin {
         VertexConsumer consumer = client.getBufferBuilders().getEntityVertexConsumers().getBuffer(RenderLayer.getLines());
 
         matrices.translate(-origin.getX() - camera.getPos().x, -origin.getY() - camera.getPos().y, -origin.getZ() - camera.getPos().z);
-        System.out.println("draw");
+        //System.out.println("draw");
         WorldRenderer.drawBox(matrices, consumer, new Box(0, 0, 0, 5, 5, 5), 1, 1, 1, 1);
 
         matrices.pop();
