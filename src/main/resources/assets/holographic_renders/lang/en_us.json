@@ -1,5 +1,8 @@
 {
   "block.holographic_renders.projector": "Projector",
   "item.holographic_renders.projector": "Projector",
-  "item.holographic_renders.area_scanner": "Area Scanner"
+  "item.holographic_renders.area_scanner": "Area Scanner",
+  "item.holographic_renders.entity_scanner": "Entity Scanner",
+  "item.holographic_renders.player_scanner": "Player Scanner",
+  "itemGroup.holographic_renders.general": "Holographic Renders"
 }

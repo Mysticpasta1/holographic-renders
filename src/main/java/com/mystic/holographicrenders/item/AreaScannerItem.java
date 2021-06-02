@@ -1,5 +1,6 @@
 package com.mystic.holographicrenders.item;
 
+import com.mystic.holographicrenders.HolographicRenders;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -20,7 +21,7 @@ import java.util.List;
 
 public class AreaScannerItem extends Item {
     public AreaScannerItem() {
-        super(new Settings().maxCount(1));
+        super(new Settings().maxCount(1).group(HolographicRenders.HOLOGRAPHIC_RENDERS_CREATIVE_TAB));
     }
 
     @Override
