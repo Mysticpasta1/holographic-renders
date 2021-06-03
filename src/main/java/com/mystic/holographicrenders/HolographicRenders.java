@@ -50,5 +50,6 @@ public class HolographicRenders implements ModInitializer {
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "area_scanner"), AREA_SCANNER);
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "player_scanner"), PLAYER_SCANNER);
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
+
     }
 }

@@ -57,7 +57,6 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public DefaultedList<ItemStack> getItems() {
         return inventory;
-
     }
 
     @Override

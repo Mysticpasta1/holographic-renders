@@ -1,5 +1,8 @@
 package com.mystic.holographicrenders.client;
 
+import com.glisco.worldmesher.WorldMesh;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
@@ -14,14 +17,11 @@ import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.util.math.Vector3f;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.state.property.DirectionProperty;
-import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
@@ -261,10 +261,10 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(0.5, 0.0, 0.5);
 
-            PlayerEntity closestPlayer = MinecraftClient.getInstance().player;
-            if (closestPlayer != null) {
-                double x = closestPlayer.getX() - be.getPos().getX() - 0.5;
-                double z = closestPlayer.getZ() - be.getPos().getZ() - 0.5;
+            PlayerEntity player = MinecraftClient.getInstance().player;
+            if (player != null) {
+                double x = player.getX() - be.getPos().getX() - 0.5;
+                double z = player.getZ() - be.getPos().getZ() - 0.5;
                 float rot = (float) MathHelper.atan2(z, x);
                 matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
                 matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80));
@@ -297,13 +297,11 @@ public abstract class RenderDataProvider<T> {
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
 
-        private BlockState[][][] cache;
-        private boolean cacheValid = false;
-        private final AreaRenderer renderer;
+        private WorldMesh mesh;
 
         protected AreaProvider(Pair<BlockPos, BlockPos> data) {
             super(data);
-            renderer = new AreaRenderer();
+            mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight()).build();
         }
 
         public static AreaProvider from(BlockPos start, BlockPos end) {
@@ -313,55 +311,47 @@ public abstract class RenderDataProvider<T> {
         @Override
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-            if (!cacheValid) loadCache();
-            if (!renderer.isReady()) {
-                BlockPos origin = new BlockPos(Math.min(data.getLeft().getX(), data.getRight().getX()), Math.min(data.getLeft().getY(), data.getRight().getY()), Math.min(data.getLeft().getZ(), data.getRight().getZ()));
-                renderer.build(cache, origin);
-            }
+            if (!mesh.isBuilt()) {
+                mesh.scheduleRebuild();
+                matrices.translate(0.5, 0.0, 0.5);
 
-            matrices.push();
-
-            matrices.translate(0.5, 1, 0.5);
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
-            matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
-            matrices.translate(-cache[0][0].length / 2f, 0, -cache[0].length / 2f); //TODO make this usable with translation sliders
-
-            renderer.render(matrices);
-
-            matrices.pop();
-        }
-
-        @Environment(EnvType.CLIENT)
-        private void loadCache() {
-            final ClientWorld world = MinecraftClient.getInstance().world;
-
-            BlockPos pos1 = data.getLeft();
-            BlockPos pos2 = data.getRight();
-
-            BlockPos start = new BlockPos(Math.min(pos1.getX(), pos2.getX()), Math.min(pos1.getY(), pos2.getY()), Math.min(pos1.getZ(), pos2.getZ()));
-            BlockPos end = new BlockPos(Math.max(pos1.getX(), pos2.getX()), Math.max(pos1.getY(), pos2.getY()), Math.max(pos1.getZ(), pos2.getZ()));
-
-            int xDiff = end.getX() - start.getX();
-            int yDiff = end.getY() - start.getY();
-            int zDiff = end.getZ() - start.getZ();
-
-            BlockState[][][] states = new BlockState[yDiff + 1][zDiff + 1][xDiff + 1];
-
-            for (int y = 0; y <= yDiff; y++) {
-                for (int z = 0; z <= zDiff; z++) {
-                    for (int x = 0; x <= xDiff; x++) {
-                        states[y][z][x] = world.getBlockState(start.add(x, y, z));
-                    }
+                PlayerEntity player = MinecraftClient.getInstance().player;
+                if (player != null) {
+                    double x = player.getX() - be.getPos().getX() - 0.5;
+                    double z = player.getZ() - be.getPos().getZ() - 0.5;
+                    float rot = (float) MathHelper.atan2(z, x);
+                    matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
+                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80));
                 }
-            }
 
-            cache = states;
-            cacheValid = true;
+                matrices.scale(0.025f, -0.025f, 0.025f); //TODO make this usable with scaling sliders
+                matrices.translate(-(MinecraftClient.getInstance().textRenderer.getWidth("Scanning") / 2f), -60, -0.0); //TODO make this usable with translation sliders
+                MinecraftClient.getInstance().textRenderer.draw(matrices, "Scanning", 0, 0, 0xAAAAAA);
+            } else {
+                matrices.translate(0.5, 1, 0.5);
+                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+                matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
+
+                int xSize = 1 + Math.max(data.getLeft().getX(), data.getRight().getX()) - Math.min(data.getLeft().getX(), data.getRight().getX());
+                int zSize = 1 + Math.max(data.getLeft().getZ(), data.getRight().getZ()) - Math.min(data.getLeft().getZ(), data.getRight().getZ());
+
+                matrices.translate(-xSize / 2f, 0, -zSize / 2f); //TODO make this usable with translation sliders
+
+                mesh.render(matrices.peek().getModel());
+            }
         }
 
         @Environment(EnvType.CLIENT)
         public void invalidateCache() {
-            cacheValid = false;
+            mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight()).renderActions(() -> {
+                RenderSystem.enableBlend();
+                RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
+                RenderSystem.blendColor(1, 1, 1, 0.6f);
+            }, () -> {
+                RenderSystem.blendColor(1, 1, 1, 1);
+                RenderSystem.disableBlend();
+            }).build();
+            mesh.scheduleRebuild();
         }
 
         @Override

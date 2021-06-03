@@ -110,7 +110,7 @@ public class ProjectorBlock extends BlockWithEntity{
 
     public ProjectorBlock() {
         super(Settings.copy(Blocks.IRON_BLOCK).nonOpaque());
-        this.setDefaultState(this.getStateManager().getDefaultState().with(PROPERTY_FACING, Direction.NORTH));
+        this.setDefaultState(this.getStateManager().getDefaultState().with(PROPERTY_FACING, Direction.UP));
     }
 
 
@@ -166,7 +166,7 @@ public class ProjectorBlock extends BlockWithEntity{
 
     @Override
     public BlockState getPlacementState(ItemPlacementContext context) {
-        return this.getDefaultState().with(PROPERTY_FACING, context.getPlayerLookDirection().getOpposite());
+        return this.getDefaultState().with(PROPERTY_FACING, context.getSide());
     }
 
     @Override

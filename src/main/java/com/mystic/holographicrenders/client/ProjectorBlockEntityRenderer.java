@@ -15,8 +15,6 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
 
     private static VertexConsumerProvider.Immediate immediate;
 
-    public static HologramBlockModelRenderer blockModelRenderer;
-
     public ProjectorBlockEntityRenderer(BlockEntityRenderDispatcher dispatcher) {
         super(dispatcher);
     }
@@ -25,14 +23,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
     public void render(ProjectorBlockEntity entity, float tickDelta, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, int overlay) {
         if (immediate == null) {
             immediate = HologramRenderLayer.initBuffers(MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers());
-            blockModelRenderer = new HologramBlockModelRenderer(MinecraftClient.getInstance().getBlockColors());
         }
-
-        matrices.push();
-        entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
-        matrices.pop();
-
-        immediate.draw();
 
         try {
 
@@ -88,9 +79,16 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             vertex(matrix4f, buffer, -0.25f, topY, 1, r, g, b, 0);
             vertex(matrix4f, buffer, 0.125f, 0.85f, 0.9f, r, g, b, startAlpha);
             vertex(matrix4f, buffer, 0.125f, 0.85f, 0.1f, r, g, b, startAlpha);
+
         } catch (Exception e) {
 
         }
+
+        matrices.push();
+        entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
+        matrices.pop();
+
+        immediate.draw();
     }
 
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {
