@@ -26,6 +26,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
@@ -83,7 +84,7 @@ public abstract class RenderDataProvider<T> {
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-            matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
+            matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
             //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
@@ -127,7 +128,7 @@ public abstract class RenderDataProvider<T> {
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-            matrices.translate(0.5, 1.15, 0.5); //TODO make this usable with translation sliders
+            matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
@@ -177,40 +178,9 @@ public abstract class RenderDataProvider<T> {
 
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
 
+            matrices.translate(0.5, 0.75, 0.5);
+            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
-
-            switch (ProjectorBlock.getFacing(be.getCachedState())) {
-                case UP:
-                    matrices.translate(1.0, 2.5, 1.0);
-                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-                    break;
-                case DOWN:
-                    matrices.translate(1.0, -0.5, 1.0);
-                    matrices.multiply(Vector3f.POSITIVE_X.getDegreesQuaternion(180));
-                    matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-                    break;
-                case WEST:
-                    matrices.translate(-0.5, 1.0, 1.0);
-                    matrices.multiply(Vector3f.POSITIVE_Z.getDegreesQuaternion(90));
-                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-                    break;
-                case NORTH:
-                    matrices.translate(1.0, 1.0, -0.5);
-                    matrices.multiply(Vector3f.NEGATIVE_X.getDegreesQuaternion(90));
-                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-                    break;
-                case EAST:
-                    matrices.translate(2.5, 1.0, 1.0);
-                    matrices.multiply(Vector3f.NEGATIVE_Z.getDegreesQuaternion(90));
-                    matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-                    break;
-                case SOUTH:
-                    matrices.translate(1.0, 1.0, 2.5);
-                    matrices.multiply(Vector3f.POSITIVE_X.getDegreesQuaternion(90));
-                    matrices.multiply(Vector3f.NEGATIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
-                    break;
-            }
-
 
             final EntityRenderDispatcher entityRenderDispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
             entityRenderDispatcher.setRenderShadows(false);
@@ -258,21 +228,46 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+            drawText(matrices, be, 0, data);
+        }
 
+        public static void drawText(MatrixStack matrices, BlockEntity be, int color, Text text){
             matrices.translate(0.5, 0.0, 0.5);
 
             PlayerEntity player = MinecraftClient.getInstance().player;
             if (player != null) {
-                double x = player.getX() - be.getPos().getX() - 0.5;
-                double z = player.getZ() - be.getPos().getZ() - 0.5;
-                float rot = (float) MathHelper.atan2(z, x);
-                matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
-                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80));
+                final Direction facing = ProjectorBlock.getFacing(be.getCachedState());
+
+                double side1;
+                double side2;
+
+                switch (facing.getAxis()){
+                    case X:
+                        side1 = player.getY() - be.getPos().getY() - 0.5;
+                        side2 = player.getZ() - be.getPos().getZ() - 0.5;
+                        break;
+                    case Z:
+                        side1 = player.getX() - be.getPos().getX() - 0.5;
+                        side2 = player.getY() - be.getPos().getY() - 0.5;
+                        break;
+                    default:
+                        side1 = player.getX() - be.getPos().getX() - 0.5;
+                        side2 = player.getZ() - be.getPos().getZ() - 0.5;
+                        break;
+                }
+
+                float rot = (float) MathHelper.atan2(side2, side1);
+                rot *= facing == Direction.UP ? -1 : 1;
+                rot *= facing.getAxis() == Direction.Axis.Z ? facing.getOffsetZ() : 1;
+                rot *= facing.getAxis() == Direction.Axis.X ? facing.getOffsetX() : 1;
+                matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(rot));
+                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80 * (facing == Direction.EAST ? -1 : 1)));
             }
 
-            matrices.scale(0.1f, -0.1f, 0.1f); //TODO make this usable with scaling sliders
-            matrices.translate(-(MinecraftClient.getInstance().textRenderer.getWidth(data) / 2f), -20, -0.0); //TODO make this usable with translation sliders
-            MinecraftClient.getInstance().textRenderer.draw(matrices, data, 0, 0, 0);
+            matrices.scale(0.05f, -0.05f, 0.05f); //TODO make this usable with scaling sliders
+            matrices.translate(-(MinecraftClient.getInstance().textRenderer.getWidth(text) / 2f), -20, 0); //TODO make this usable with translation sliders
+
+            MinecraftClient.getInstance().textRenderer.draw(matrices, text, 0, 0, color);
         }
 
         @Override
@@ -313,22 +308,13 @@ public abstract class RenderDataProvider<T> {
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
             if (!mesh.isBuilt()) {
                 mesh.scheduleRebuild();
-                matrices.translate(0.5, 0.0, 0.5);
-
-                PlayerEntity player = MinecraftClient.getInstance().player;
-                if (player != null) {
-                    double x = player.getX() - be.getPos().getX() - 0.5;
-                    double z = player.getZ() - be.getPos().getZ() - 0.5;
-                    float rot = (float) MathHelper.atan2(z, x);
-                    matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
-                    matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80));
-                }
-
-                matrices.scale(0.025f, -0.025f, 0.025f); //TODO make this usable with scaling sliders
-                matrices.translate(-(MinecraftClient.getInstance().textRenderer.getWidth("Scanning") / 2f), -60, -0.0); //TODO make this usable with translation sliders
-                MinecraftClient.getInstance().textRenderer.draw(matrices, "Scanning", 0, 0, 0xAAAAAA);
+                matrices.translate(0.5, 0, 0.5);
+                matrices.scale(0.5f, 0.5f, 0.5f);
+                matrices.translate(-0.5, 0, -0.5);
+                matrices.translate(0, 0.65, 0);
+                TextProvider.drawText(matrices, be, 0, Text.of("§b[§aScanning§b]"));
             } else {
-                matrices.translate(0.5, 1, 0.5);
+                matrices.translate(0.5, 0.5, 0.5);
                 matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
                 matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
 

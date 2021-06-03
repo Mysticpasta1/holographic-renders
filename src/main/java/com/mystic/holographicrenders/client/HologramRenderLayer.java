@@ -29,7 +29,6 @@ public class HologramRenderLayer extends RenderLayer {
             RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
             RenderSystem.blendColor(1, 1, 1, 0.6f); //TODO make 0.6F a redstone dependent value out of 15, 0 OFF, 15 FULL OPACITY
         }, () -> {
-//            RenderSystem.blendColor(1, 1, 1, 1);
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableBlend();
 
