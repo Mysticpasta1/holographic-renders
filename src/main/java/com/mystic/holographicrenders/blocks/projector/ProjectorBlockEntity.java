@@ -6,6 +6,7 @@ import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -25,11 +26,22 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
 
+    private boolean shouldDrawLights = true;
+
     @NotNull
     private RenderDataProvider<?> renderer = RenderDataProvider.EmptyProvider.INSTANCE;
 
     public ProjectorBlockEntity() {
         super(HolographicRenders.PROJECTOR_BLOCK_ENTITY);
+
+    }
+
+    public void setShouldDrawLights(boolean shouldDrawLights){
+        this.shouldDrawLights = shouldDrawLights;
+    }
+
+    public boolean isShouldDrawLights() {
+        return shouldDrawLights;
     }
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
@@ -50,7 +62,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(providerId);
         renderer.fromTag(tag, this);
-
+        shouldDrawLights = tag.getBoolean("Lights");
         Inventories.fromTag(tag, inventory);
     }
 
@@ -67,6 +79,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public CompoundTag toTag(CompoundTag tag) {
         renderer.toTag(tag, this);
+        tag.putBoolean("Lights", shouldDrawLights);
         Inventories.toTag(tag, inventory);
         return super.toTag(tag);
     }

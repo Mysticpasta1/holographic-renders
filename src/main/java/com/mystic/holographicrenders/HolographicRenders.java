@@ -8,6 +8,7 @@ import com.mystic.holographicrenders.item.EntityScannerItem;
 import com.mystic.holographicrenders.item.PlayerScannerItem;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
@@ -50,6 +51,14 @@ public class HolographicRenders implements ModInitializer {
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "area_scanner"), AREA_SCANNER);
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "player_scanner"), PLAYER_SCANNER);
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
-
+        ServerPlayNetworking.registerGlobalReceiver(new Identifier(MOD_ID, "send_side_light_packet"), (server, player ,handler, buf, responseSender) -> {
+            boolean readBuf = buf.readBoolean();
+            server.execute(() -> {
+                if(player.currentScreenHandler instanceof ProjectorScreenHandler)
+                {
+                    ((ProjectorScreenHandler) player.currentScreenHandler).setShouldDrawLights2(readBuf);
+                }
+            });
+        });
     }
 }

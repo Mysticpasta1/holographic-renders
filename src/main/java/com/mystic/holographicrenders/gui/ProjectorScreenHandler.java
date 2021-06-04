@@ -1,11 +1,13 @@
 package com.mystic.holographicrenders.gui;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 
@@ -14,6 +16,11 @@ public class ProjectorScreenHandler extends ScreenHandler {
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory) {
         this(syncId, playerInventory, new SimpleInventory(1));
+    }
+
+    public void setShouldDrawLights2(boolean shouldDrawLights){
+        ProjectorBlockEntity projectorBlockEntity = (ProjectorBlockEntity) inventory;
+        projectorBlockEntity.setShouldDrawLights(shouldDrawLights);
     }
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
