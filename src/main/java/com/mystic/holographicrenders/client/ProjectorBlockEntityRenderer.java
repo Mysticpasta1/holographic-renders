@@ -42,7 +42,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
         matrices.multiply(Vector3f.NEGATIVE_Z.getDegreesQuaternion(facing.getOffsetX() * 90));
         matrices.translate(-0.5, -0.5, -0.5);
 
-            if(entity.isShouldDrawLights()){
+            if(entity.shouldDrawLights()){
                 matrices.push();
 
                 final BufferBuilder buffer = (BufferBuilder) vertexConsumers.getBuffer(RenderLayer.getLightning());

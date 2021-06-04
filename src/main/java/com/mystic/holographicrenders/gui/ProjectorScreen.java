@@ -4,16 +4,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 
 import java.util.function.Consumer;
@@ -52,9 +49,6 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
             LightsOnOff = aBoolean;
         });
         addButton(Lights_On_Or_Off);
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeBoolean(LightsOnOff);
-        ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "send_side_light_packet"), buf);
     }
 
     protected static class CallbackCheckboxWidget extends CheckboxWidget {
@@ -70,6 +64,10 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
         public void onPress() {
             super.onPress();
             changeCallback.accept(isChecked());
+            System.out.println(isChecked());
+            PacketByteBuf buf = PacketByteBufs.create();
+            buf.writeBoolean(isChecked());
+            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "send_side_light_packet"), buf);
         }
     }
 }

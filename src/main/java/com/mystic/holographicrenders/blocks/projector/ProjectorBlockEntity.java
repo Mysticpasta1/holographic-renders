@@ -4,9 +4,11 @@ import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
+import com.mystic.holographicrenders.gui.ProjectorScreen;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,8 +16,11 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.predicate.entity.EntityPredicate;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
@@ -26,7 +31,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
 
-    private boolean shouldDrawLights = true;
+    private boolean shouldDrawLights;
 
     @NotNull
     private RenderDataProvider<?> renderer = RenderDataProvider.EmptyProvider.INSTANCE;
@@ -40,7 +45,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
         this.shouldDrawLights = shouldDrawLights;
     }
 
-    public boolean isShouldDrawLights() {
+    public boolean shouldDrawLights() {
         return shouldDrawLights;
     }
 
@@ -58,11 +63,10 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public void fromTag(BlockState state, CompoundTag tag) {
         super.fromTag(state, tag);
-
+        shouldDrawLights = tag.getBoolean("Lights");
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(providerId);
         renderer.fromTag(tag, this);
-        shouldDrawLights = tag.getBoolean("Lights");
         Inventories.fromTag(tag, inventory);
     }
 
@@ -78,8 +82,8 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public CompoundTag toTag(CompoundTag tag) {
+        tag.putBoolean("Lights", shouldDrawLights());
         renderer.toTag(tag, this);
-        tag.putBoolean("Lights", shouldDrawLights);
         Inventories.toTag(tag, inventory);
         return super.toTag(tag);
     }
