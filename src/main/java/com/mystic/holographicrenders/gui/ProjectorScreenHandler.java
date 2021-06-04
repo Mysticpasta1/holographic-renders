@@ -15,13 +15,16 @@ import net.minecraft.util.math.BlockPos;
 public class ProjectorScreenHandler extends ScreenHandler {
     private final Inventory inventory;
 
-    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory) {
+    boolean bufReader;
+
+    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buf) {
         this(syncId, playerInventory, new SimpleInventory(1));
+        bufReader = buf.readBoolean();
     }
 
-    public void setShouldDrawLights2(boolean shouldDrawLights){
+    public void setShouldDrawLights2(boolean shouldDrawLights, boolean sync){
         ProjectorBlockEntity projectorBlockEntity = (ProjectorBlockEntity) inventory;
-        projectorBlockEntity.setShouldDrawLights(shouldDrawLights);
+        projectorBlockEntity.setShouldDrawLights(shouldDrawLights, sync);
     }
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {

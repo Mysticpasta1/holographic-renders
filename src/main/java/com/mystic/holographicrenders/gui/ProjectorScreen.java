@@ -17,10 +17,12 @@ import java.util.function.Consumer;
 
 public class ProjectorScreen extends HandledScreen<ScreenHandler> {
     private static final Identifier TEXTURE = new Identifier("holographic_renders", "textures/gui_hologram_projector.png");
-    private boolean LightsOnOff = true;
+    private boolean LightsOnOff;
 
     public ProjectorScreen(ScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
+        ProjectorScreenHandler projectorScreenHandler = (ProjectorScreenHandler) handler;
+        LightsOnOff = projectorScreenHandler.bufReader;
     }
 
     @Override
@@ -45,11 +47,18 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
         // Center the title
         titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
 
-        CheckboxWidget Lights_On_Or_Off = new CallbackCheckboxWidget(20, 20, Text.of("Lights On or Off"), LightsOnOff, aBoolean -> {
+        CheckboxWidget Lights_On_Or_Off = new CallbackCheckboxWidget(20, 20, Text.of("Lights On or Off"),
+                LightsOnOff,
+                aBoolean -> {
             LightsOnOff = aBoolean;
+            PacketByteBuf buf = PacketByteBufs.create();
+            buf.writeBoolean(LightsOnOff);
+            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "send_side_light_packet"), buf);
         });
         addButton(Lights_On_Or_Off);
+
     }
+
 
     protected static class CallbackCheckboxWidget extends CheckboxWidget {
 
@@ -64,10 +73,6 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
         public void onPress() {
             super.onPress();
             changeCallback.accept(isChecked());
-            System.out.println(isChecked());
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeBoolean(isChecked());
-            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "send_side_light_packet"), buf);
         }
     }
 }

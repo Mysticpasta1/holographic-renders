@@ -18,7 +18,6 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 
 public class HolographicRenders implements ModInitializer {
@@ -39,7 +38,7 @@ public class HolographicRenders implements ModInitializer {
     public static final ScreenHandlerType<ProjectorScreenHandler> HOLOGRAM_SCREEN_HANDLER;
 
     static {
-        HOLOGRAM_SCREEN_HANDLER = ScreenHandlerRegistry.registerSimple(PROJECTOR_ID, ProjectorScreenHandler::new);
+        HOLOGRAM_SCREEN_HANDLER = ScreenHandlerRegistry.registerExtended(PROJECTOR_ID, ProjectorScreenHandler::new);
     }
 
     @Override
@@ -57,7 +56,7 @@ public class HolographicRenders implements ModInitializer {
             server.execute(() -> {
                 if(player.currentScreenHandler instanceof ProjectorScreenHandler)
                 {
-                    ((ProjectorScreenHandler) player.currentScreenHandler).setShouldDrawLights2(readBuf);
+                    ((ProjectorScreenHandler) player.currentScreenHandler).setShouldDrawLights2(readBuf, true);
                 }
             });
         });

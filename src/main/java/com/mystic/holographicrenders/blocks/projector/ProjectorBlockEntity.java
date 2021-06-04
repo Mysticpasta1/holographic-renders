@@ -4,10 +4,8 @@ import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
-import com.mystic.holographicrenders.gui.ProjectorScreen;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -17,8 +15,6 @@ import net.minecraft.inventory.Inventories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.PacketByteBuf;
-import net.minecraft.predicate.entity.EntityPredicate;
-import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -27,11 +23,11 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, NamedScreenHandlerFactory, ImplementedInventory {
+public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory {
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
 
-    private boolean shouldDrawLights;
+    private boolean shouldDrawLights = true;
 
     @NotNull
     private RenderDataProvider<?> renderer = RenderDataProvider.EmptyProvider.INSTANCE;
@@ -41,12 +37,16 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     }
 
-    public void setShouldDrawLights(boolean shouldDrawLights){
+    public void setShouldDrawLights(boolean shouldDrawLights, boolean sync){
         this.shouldDrawLights = shouldDrawLights;
+        if (sync) {
+            this.markDirty();
+        }
     }
 
     public boolean shouldDrawLights() {
         return shouldDrawLights;
+
     }
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
@@ -110,5 +110,10 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
         return new ProjectorScreenHandler(syncId, playerInventory, this);
+    }
+
+    @Override
+    public void writeScreenOpeningData(ServerPlayerEntity player, PacketByteBuf buf) {
+        buf.writeBoolean(shouldDrawLights());
     }
 }
