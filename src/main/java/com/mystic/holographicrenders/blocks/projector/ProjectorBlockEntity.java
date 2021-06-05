@@ -20,13 +20,18 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Tickable;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory {
+public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory, Tickable {
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
-
+    protected int alpha;
+    protected long lastCheck = -1; //Not Saved
     private boolean shouldDrawLights = true;
 
     @NotNull
@@ -34,6 +39,30 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     public ProjectorBlockEntity() {
         super(HolographicRenders.PROJECTOR_BLOCK_ENTITY);
+    }
+
+    public int setAlpha(int alpha) {
+        this.alpha = alpha;
+        return alpha;
+    }
+
+    @Override
+    public void tick() {
+        if(world == null || world.isClient) return;
+
+        if(world.getTime() == lastCheck) return;
+        lastCheck = world.getTime();
+
+        BlockState state = getCachedState();
+        Direction facing = state.get(ProjectorBlock.PROPERTY_FACING);
+        BlockPos posToCheck = pos.offset(facing);
+        int alpha = world.getReceivedRedstonePower(posToCheck);
+        setAlpha(alpha);
+        markDirty();
+
+        BlockPos reversePos = pos.offset(facing.getOpposite());
+        world.updateNeighbor(reversePos, state.getBlock(), pos);
+        world.updateNeighborsExcept(reversePos, state.getBlock(), facing);
 
     }
 
@@ -46,7 +75,6 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     public boolean shouldDrawLights() {
         return shouldDrawLights;
-
     }
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
@@ -63,6 +91,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public void fromTag(BlockState state, CompoundTag tag) {
         super.fromTag(state, tag);
+        alpha = tag.getInt("Alpha");
         shouldDrawLights = tag.getBoolean("Lights");
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(providerId);
@@ -82,6 +111,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public CompoundTag toTag(CompoundTag tag) {
+        tag.putInt("Alpha", alpha);
         tag.putBoolean("Lights", shouldDrawLights());
         renderer.toTag(tag, this);
         Inventories.toTag(tag, inventory);

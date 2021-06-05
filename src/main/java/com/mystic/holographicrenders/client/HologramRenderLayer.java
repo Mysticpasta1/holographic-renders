@@ -20,6 +20,15 @@ public class HologramRenderLayer extends RenderLayer {
     //TODO refactor this and make it not shit
 
     private static final Map<RenderLayer, RenderLayer> remappedTypes = new IdentityHashMap<>();
+    private static int redAlpha;
+
+    public int getRedAlpha(){
+        return HologramRenderLayer.redAlpha;
+    }
+
+    public static void setRedAlpha(int redAlpha){
+        HologramRenderLayer.redAlpha = redAlpha;
+    }
 
     private HologramRenderLayer(RenderLayer original) {
         super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.getVertexFormat(), original.getDrawMode(), original.getExpectedBufferSize(), original.hasCrumbling(), true, () -> {
@@ -27,7 +36,7 @@ public class HologramRenderLayer extends RenderLayer {
 
             RenderSystem.enableBlend();
             RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
-            RenderSystem.blendColor(1, 1, 1, 0.6f); //TODO make 0.6F a redstone dependent value out of 15, 0 OFF, 15 FULL OPACITY
+            RenderSystem.blendColor(1, 1, 1, redAlpha / 15.0f); //TODO check my math! (redAlpha = 0 = ON), (redAlpha = 15 = OFF)
         }, () -> {
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableBlend();
@@ -40,7 +49,7 @@ public class HologramRenderLayer extends RenderLayer {
         if (in instanceof HologramRenderLayer) {
             return in;
         } else {
-            return remappedTypes.computeIfAbsent(in, HologramRenderLayer::new);
+            return remappedTypes.computeIfAbsent(in, original -> new HologramRenderLayer(original));
         }
     }
 
