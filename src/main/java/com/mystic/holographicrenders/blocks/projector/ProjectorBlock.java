@@ -1,13 +1,10 @@
 package com.mystic.holographicrenders.blocks.projector;
 
-import com.mystic.holographicrenders.HolographicRenders;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import com.mystic.holographicrenders.network.ProjectorScreenPacket;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.state.StateManager;
@@ -27,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.Stream;
 
-public class ProjectorBlock extends BlockWithEntity{
+public class ProjectorBlock extends BlockWithEntity {
 
     public static final DirectionProperty PROPERTY_FACING = Properties.FACING;
 
@@ -44,7 +41,7 @@ public class ProjectorBlock extends BlockWithEntity{
                     Block.createCuboidShape(6, 6.000000000000001, 5.653737373415293, 10, 10.000000000000002, 6.653737373415293),
                     Block.createCuboidShape(3, 2.999999999999999, 6.653737373415293, 13, 13.000000000000002, 15.903737373415296),
                     Block.createCuboidShape(7, 7.000000000000001, 3.903737373415293, 9, 9.000000000000002, 6.903737373415293)
-    ).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get(),
+            ).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get(),
             //EAST
             Stream.of(
                     Block.createCuboidShape(13.199816017177985, 14.00000000000001, 1.9999999999999947, 14.199816017177984, 15.00000000000001, 14.999999999999996),
@@ -110,7 +107,7 @@ public class ProjectorBlock extends BlockWithEntity{
                     Block.createCuboidShape(2, 13.10355, 14, 15, 14.10355, 15),
                     Block.createCuboidShape(1, 13.10355, 1, 14, 14.10355, 2)
             ).reduce((v1, v2) -> VoxelShapes.combineAndSimplify(v1, v2, BooleanBiFunction.OR)).get()
-};
+    };
 
     public ProjectorBlock() {
         super(Settings.copy(Blocks.IRON_BLOCK).nonOpaque());
@@ -125,12 +122,18 @@ public class ProjectorBlock extends BlockWithEntity{
     @Override
     public VoxelShape getOutlineShape(@NotNull BlockState state, BlockView world, BlockPos pos, ShapeContext context) {
         switch (getFacing(state)) {
-            case NORTH: return SHAPES[0];
-            case EAST:  return SHAPES[1];
-            case SOUTH: return SHAPES[2];
-            case WEST:  return SHAPES[3];
-            case DOWN: return SHAPES[4];
-            default:  return SHAPES[5];
+            case NORTH:
+                return SHAPES[0];
+            case EAST:
+                return SHAPES[1];
+            case SOUTH:
+                return SHAPES[2];
+            case WEST:
+                return SHAPES[3];
+            case DOWN:
+                return SHAPES[4];
+            default:
+                return SHAPES[5];
         }
     }
 
@@ -149,9 +152,11 @@ public class ProjectorBlock extends BlockWithEntity{
         if (world.isClient) return ActionResult.SUCCESS;
 
         NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
+        ProjectorBlockEntity be = (ProjectorBlockEntity) screenHandlerFactory;
 
         if (screenHandlerFactory != null) {
             player.openHandledScreen(screenHandlerFactory);
+            ((ServerPlayerEntity) player).networkHandler.sendPacket(ProjectorScreenPacket.createUpdate(be.lightsEnabled()));
         }
 
         return ActionResult.SUCCESS;
@@ -182,7 +187,7 @@ public class ProjectorBlock extends BlockWithEntity{
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof ProjectorBlockEntity) {
-                ItemScatterer.spawn(world, pos, (ProjectorBlockEntity)blockEntity);
+                ItemScatterer.spawn(world, pos, (ProjectorBlockEntity) blockEntity);
             }
             super.onStateReplaced(state, world, pos, newState, moved);
         }
@@ -190,20 +195,8 @@ public class ProjectorBlock extends BlockWithEntity{
 
     @Override
     public void neighborUpdate(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
-        for (PlayerEntity player : world.getPlayers()) {
-            sendPackets((ServerPlayerEntity) player, world, pos, state);
-        }
-    }
-
-    protected int power(World world, BlockPos pos, BlockState state) {
-        ProjectorBlockEntity be = new ProjectorBlockEntity();
-        return be.setAlpha(world.getReceivedRedstonePower(pos));
-    }
-
-    public void sendPackets(ServerPlayerEntity player, World world, BlockPos pos, BlockState state){
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeInt(power(world, pos, state));
-        ServerPlayNetworking.send(player, new Identifier(HolographicRenders.MOD_ID, "sent_alpha_redstone"), buf);
+        ProjectorBlockEntity be = (ProjectorBlockEntity) world.getBlockEntity(pos);
+        be.setAlpha(Math.max(0.15f, Math.min((15 - world.getReceivedRedstonePower(pos)) / 15f, 0.8f)));
     }
 
     @Nullable

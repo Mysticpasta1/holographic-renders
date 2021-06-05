@@ -20,27 +20,29 @@ public class HologramRenderLayer extends RenderLayer {
     //TODO refactor this and make it not shit
 
     private static final Map<RenderLayer, RenderLayer> remappedTypes = new IdentityHashMap<>();
-    private static int redAlpha;
+    private static float alpha = 0.6f;
 
-    public int getRedAlpha(){
-        return HologramRenderLayer.redAlpha;
-    }
+    public static final Runnable beginAction = () -> {
+        RenderSystem.enableBlend();
+        RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
+        RenderSystem.blendColor(1, 1, 1, alpha); //TODO check my math! (redAlpha = 0 = ON), (redAlpha = 15 = OFF) //TODO fix this so only on is doing this at a time!!!
+    };
 
-    public static void setRedAlpha(int redAlpha){
-        HologramRenderLayer.redAlpha = redAlpha;
+    public static final Runnable endAction = () -> {
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableBlend();
+    };
+
+    public static void setAlpha(float alpha) {
+        HologramRenderLayer.alpha = alpha;
     }
 
     private HologramRenderLayer(RenderLayer original) {
         super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.getVertexFormat(), original.getDrawMode(), original.getExpectedBufferSize(), original.hasCrumbling(), true, () -> {
             original.startDrawing();
-
-            RenderSystem.enableBlend();
-            RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
-            RenderSystem.blendColor(1, 1, 1, redAlpha / 15.0f); //TODO check my math! (redAlpha = 0 = ON), (redAlpha = 15 = OFF) //TODO fix this so only on is doing this at a time!!!
+            beginAction.run();
         }, () -> {
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.disableBlend();
-
+            endAction.run();
             original.endDrawing();
         });
     }

@@ -14,8 +14,8 @@ public class RenderDataProviderRegistry {
         REGISTRY.put(typeId, factory);
     }
 
-    public static RenderDataProvider<?> getProvider(Identifier typeId) {
-        return REGISTRY.get(typeId).get();
+    public static RenderDataProvider<?> getProvider(RenderDataProvider<?> previousProvider, Identifier typeId) {
+        return previousProvider != null && previousProvider.getTypeId().equals(typeId) ? previousProvider : REGISTRY.get(typeId).get();
     }
 
 }

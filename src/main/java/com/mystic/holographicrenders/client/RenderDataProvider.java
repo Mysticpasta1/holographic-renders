@@ -1,8 +1,6 @@
 package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
@@ -231,7 +229,7 @@ public abstract class RenderDataProvider<T> {
             drawText(matrices, be, 0, data);
         }
 
-        public static void drawText(MatrixStack matrices, BlockEntity be, int color, Text text){
+        public static void drawText(MatrixStack matrices, BlockEntity be, int color, Text text) {
             matrices.translate(0.5, 0.0, 0.5);
 
             PlayerEntity player = MinecraftClient.getInstance().player;
@@ -241,7 +239,7 @@ public abstract class RenderDataProvider<T> {
                 double side1;
                 double side2;
 
-                switch (facing.getAxis()){
+                switch (facing.getAxis()) {
                     case X:
                         side1 = player.getY() - be.getPos().getY() - 0.5;
                         side2 = player.getZ() - be.getPos().getZ() - 0.5;
@@ -296,7 +294,7 @@ public abstract class RenderDataProvider<T> {
 
         protected AreaProvider(Pair<BlockPos, BlockPos> data) {
             super(data);
-            mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight()).build();
+            invalidateCache();
         }
 
         public static AreaProvider from(BlockPos start, BlockPos end) {
@@ -306,8 +304,7 @@ public abstract class RenderDataProvider<T> {
         @Override
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-            if (!mesh.isBuilt()) {
-                mesh.scheduleRebuild();
+            if (!mesh.canRender()) {
                 matrices.translate(0.5, 0, 0.5);
                 matrices.scale(0.5f, 0.5f, 0.5f);
                 matrices.translate(-0.5, 0, -0.5);
@@ -329,14 +326,14 @@ public abstract class RenderDataProvider<T> {
 
         @Environment(EnvType.CLIENT)
         public void invalidateCache() {
-            mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight()).renderActions(() -> {
-                RenderSystem.enableBlend();
-                RenderSystem.blendFunc(GlStateManager.SrcFactor.CONSTANT_ALPHA, GlStateManager.DstFactor.ONE_MINUS_CONSTANT_ALPHA);
-                RenderSystem.blendColor(1, 1, 1, 0.6f);
-            }, () -> {
-                RenderSystem.blendColor(1, 1, 1, 1);
-                RenderSystem.disableBlend();
-            }).build();
+            mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight())
+                    .renderActions(HologramRenderLayer.beginAction, HologramRenderLayer.endAction)
+                    .build();
+            rebuild();
+        }
+
+        @Environment(EnvType.CLIENT)
+        public void rebuild() {
             mesh.scheduleRebuild();
         }
 
@@ -355,9 +352,10 @@ public abstract class RenderDataProvider<T> {
             BlockPos start = BlockPos.fromLong(tag.getLong("Start"));
             BlockPos end = BlockPos.fromLong(tag.getLong("End"));
 
-            this.data = new Pair<>(start, end);
-
-            invalidateCache();
+            if (!(start.equals(data.getLeft()) && end.equals(data.getRight()))) {
+                this.data = new Pair<>(start, end);
+                invalidateCache();
+            }
         }
 
         @Override

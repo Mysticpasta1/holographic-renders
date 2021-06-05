@@ -2,6 +2,8 @@ package com.mystic.holographicrenders.gui;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
@@ -10,25 +12,21 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.math.BlockPos;
 
 public class ProjectorScreenHandler extends ScreenHandler {
+
     private final Inventory inventory;
 
-    boolean bufReader;
-
-    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buf) {
+    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory) {
         this(syncId, playerInventory, new SimpleInventory(1));
-        bufReader = buf.readBoolean();
     }
 
-    public void setShouldDrawLights2(boolean shouldDrawLights, boolean sync){
-        ProjectorBlockEntity projectorBlockEntity = (ProjectorBlockEntity) inventory;
-        projectorBlockEntity.setShouldDrawLights(shouldDrawLights, sync);
+    public ProjectorBlockEntity getBE(){
+        return (ProjectorBlockEntity) inventory;
     }
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
-        super(HolographicRenders.HOLOGRAM_SCREEN_HANDLER, syncId);
+        super(HolographicRenders.PROJECTOR_SCREEN_HANDLER, syncId);
         checkSize(inventory, 1);
         this.inventory = inventory;
 
@@ -54,7 +52,11 @@ public class ProjectorScreenHandler extends ScreenHandler {
         return this.inventory.canPlayerUse(player);
     }
 
+    public void setLight(boolean lights) {
+        getBE().setLightEnabled(lights);
+    }
     // Shift + Player Inv Slot
+
     @Override
     public ItemStack transferSlot(PlayerEntity player, int invSlot) {
         ItemStack newStack = ItemStack.EMPTY;

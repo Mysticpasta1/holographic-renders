@@ -1,14 +1,12 @@
 package com.mystic.holographicrenders.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mystic.holographicrenders.HolographicRenders;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import com.mystic.holographicrenders.network.ProjectorScreenPacket;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -17,12 +15,11 @@ import java.util.function.Consumer;
 
 public class ProjectorScreen extends HandledScreen<ScreenHandler> {
     private static final Identifier TEXTURE = new Identifier("holographic_renders", "textures/gui_hologram_projector.png");
-    private boolean LightsOnOff;
+
+    private boolean lightsEnabled = false;
 
     public ProjectorScreen(ScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
-        ProjectorScreenHandler projectorScreenHandler = (ProjectorScreenHandler) handler;
-        LightsOnOff = projectorScreenHandler.bufReader;
     }
 
     @Override
@@ -47,20 +44,27 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
         // Center the title
         titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
 
-        CheckboxWidget Lights_On_Or_Off = new CallbackCheckboxWidget(20, 20, Text.of("Lights On or Off"),
-                LightsOnOff,
-                aBoolean -> {
-            LightsOnOff = aBoolean;
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeBoolean(LightsOnOff);
-            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "send_side_light_packet"), buf);
+        int x = (width - backgroundWidth) / 2;
+        int y = (height - backgroundHeight) / 2;
+
+        CheckboxWidget lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Text.of("Light"), lightsEnabled, aBoolean -> {
+            client.getNetworkHandler().sendPacket(ProjectorScreenPacket.createLightAction(aBoolean));
         });
-        addButton(Lights_On_Or_Off);
+        addButton(lightCheckbox);
 
     }
 
+    public void setLights(boolean lightsEnabled) {
+        this.lightsEnabled = lightsEnabled;
+        reload();
+    }
+
+    private void reload() {
+        this.init(MinecraftClient.getInstance(), this.width, this.height);
+    }
 
     protected static class CallbackCheckboxWidget extends CheckboxWidget {
+
 
         private final Consumer<Boolean> changeCallback;
 
