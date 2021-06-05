@@ -3,8 +3,10 @@ package com.mystic.holographicrenders.blocks.projector;
 import com.mystic.holographicrenders.network.ProjectorScreenPacket;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.item.ItemStack;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.state.StateManager;
@@ -194,9 +196,18 @@ public class ProjectorBlock extends BlockWithEntity {
     }
 
     @Override
+    public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
+        updateAlpha(world, pos);
+    }
+
+    @Override
     public void neighborUpdate(BlockState state, World world, BlockPos pos, Block block, BlockPos fromPos, boolean notify) {
+        updateAlpha(world, pos);
+    }
+
+    private void updateAlpha(World world, BlockPos pos) {
         ProjectorBlockEntity be = (ProjectorBlockEntity) world.getBlockEntity(pos);
-        be.setAlpha(Math.max(0.15f, Math.min((15 - world.getReceivedRedstonePower(pos)) / 15f, 0.8f)));
+        be.setAlpha(Math.max(0.15f, Math.min((15 - world.getReceivedRedstonePower(pos)) / 15f, 0.75f)));
     }
 
     @Nullable

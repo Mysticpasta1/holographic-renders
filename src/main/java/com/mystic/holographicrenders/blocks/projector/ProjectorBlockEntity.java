@@ -39,6 +39,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     }
 
     public void setAlpha(float alpha){
+        if(this.alpha == alpha) return;
         this.alpha = alpha;
         this.markDirty();
     }

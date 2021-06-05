@@ -2,12 +2,12 @@ package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
+import com.mystic.holographicrenders.item.EntityScannerItem;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.item.SpawnEggItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.math.BlockPos;
 
@@ -21,11 +21,15 @@ public class ItemProjectionHandler {
 
     static {
 
-        registerBehaviour(stack -> stack.getItem() instanceof SpawnEggItem, (be, stack) -> {
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
             final BlockPos pos = be.getPos();
 
-            EntityType<?> type = ((SpawnEggItem) stack.getItem()).getEntityType(stack.getTag());
+            if (!stack.getOrCreateTag().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
+
+            EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
+            if (type == null) return RenderDataProvider.EmptyProvider.INSTANCE;
             Entity entity = type.create(be.getWorld());
+            entity.fromTag(stack.getOrCreateTag().getCompound("Entity"));
             entity.updatePosition(pos.getX(), pos.getY(), pos.getZ());
 
             return RenderDataProvider.EntityProvider.from(entity);

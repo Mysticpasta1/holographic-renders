@@ -46,12 +46,9 @@ public class AreaScannerItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
 
         ItemStack itemstack = player.getStackInHand(hand);
-
         CompoundTag tag = itemstack.getOrCreateTag();
 
-        if (!player.isSneaking()) {
-            return TypedActionResult.pass(itemstack);
-        }
+        if (!player.isSneaking()) return TypedActionResult.pass(itemstack);
 
         tag.remove("Pos1");
         tag.remove("Pos2");

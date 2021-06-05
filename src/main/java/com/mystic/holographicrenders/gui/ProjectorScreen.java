@@ -65,7 +65,6 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
 
     protected static class CallbackCheckboxWidget extends CheckboxWidget {
 
-
         private final Consumer<Boolean> changeCallback;
 
         public CallbackCheckboxWidget(int x, int y, Text message, boolean checked, Consumer<Boolean> changeCallback) {
