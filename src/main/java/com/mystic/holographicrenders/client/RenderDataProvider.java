@@ -10,9 +10,11 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
+import net.minecraft.client.texture.TextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.entity.Entity;
@@ -23,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
@@ -31,6 +34,9 @@ import net.minecraft.world.World;
 
 import java.util.function.Function;
 
+/**
+ * @param <T>
+ */
 public abstract class RenderDataProvider<T> {
 
     protected T data;
@@ -58,6 +64,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(new Pair<>(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
+        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(new Identifier("")));
     }
 
     protected abstract CompoundTag write(ProjectorBlockEntity be);
@@ -290,10 +297,16 @@ public abstract class RenderDataProvider<T> {
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
 
+        private final MinecraftClient client;
+
         private WorldMesh mesh;
+        private long lastUpdateTick;
 
         protected AreaProvider(Pair<BlockPos, BlockPos> data) {
             super(data);
+            this.client = MinecraftClient.getInstance();
+            //TODO fix this arrgh
+            this.lastUpdateTick = this.client.world.getTime();
             invalidateCache();
         }
 
@@ -304,6 +317,12 @@ public abstract class RenderDataProvider<T> {
         @Override
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+
+            if (client.world.getTime() - lastUpdateTick > 1200) {
+                lastUpdateTick = client.world.getTime();
+                mesh.scheduleRebuild();
+            }
+
             if (!mesh.canRender()) {
                 matrices.translate(0.5, 0, 0.5);
                 matrices.scale(0.5f, 0.5f, 0.5f);
@@ -356,6 +375,62 @@ public abstract class RenderDataProvider<T> {
                 this.data = new Pair<>(start, end);
                 invalidateCache();
             }
+        }
+
+        @Override
+        public Identifier getTypeId() {
+            return ID;
+        }
+    }
+
+    public static class TextureProvider extends RenderDataProvider<Identifier> {
+
+        private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "texture");
+        private boolean textureLoaded = false;
+
+        protected TextureProvider(Identifier data) {
+            super(data);
+        }
+
+        public static TextureProvider of(Identifier id) {
+            return new TextureProvider(id);
+        }
+
+        @Override
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+            if (!textureLoaded) return;
+
+//            matrices.translate(0, 3, 0);
+//            matrices.scale(0.01f, -0.01f, 0.01f);
+
+            MinecraftClient.getInstance().getTextureManager().bindTexture(data);
+            DrawableHelper.drawTexture(matrices, 0, 0, 0, 0, 16, 16, 16, 16);
+        }
+
+        private void loadTexture() {
+            if(this.textureLoaded) return;
+
+            final TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
+            if (textureManager.getTexture(data) != null) {
+                this.textureLoaded = true;
+                return;
+            }
+
+            textureManager.loadTextureAsync(data, Util.getMainWorkerExecutor()).whenComplete((unused, throwable) -> this.textureLoaded = true);
+        }
+
+        @Override
+        protected CompoundTag write(ProjectorBlockEntity be) {
+            final CompoundTag tag = new CompoundTag();
+            tag.putString("Texture", data.toString());
+            return tag;
+        }
+
+        @Override
+        protected void read(CompoundTag tag, ProjectorBlockEntity be) {
+            this.data = Identifier.tryParse(tag.getString("Texture"));
+            textureLoaded = false;
+            loadTexture();
         }
 
         @Override

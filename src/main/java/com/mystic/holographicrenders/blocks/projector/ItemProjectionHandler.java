@@ -3,12 +3,14 @@ package com.mystic.holographicrenders.blocks.projector;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.item.EntityScannerItem;
+import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
@@ -46,15 +48,30 @@ public class ItemProjectionHandler {
             }
         });
 
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.PLAYER_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(new Identifier(HolographicRenders.MOD_ID, "textures/gui/yeet.png")));
+
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 
         registerBehaviour(stack -> stack.getItem() == Items.NAME_TAG, (be, stack) -> RenderDataProvider.TextProvider.from(stack.getName()));
     }
 
+    /**
+     * Registers a new behaviour that should be applied if the given predicate is met
+     *
+     * @param condition The {@link Predicate} to satisfy to apply the given behaviour
+     * @param behaviour The behaviour to register
+     */
     public static void registerBehaviour(Predicate<ItemStack> condition, ItemProjectionBehaviour behaviour) {
         REGISTRY.put(condition, behaviour);
     }
 
+    /**
+     * Creates a {@link RenderDataProvider} for the given ItemStack or an {@link RenderDataProvider.ItemProvider} if there is no special behaviour registered
+     *
+     * @param be The {@link ProjectorBlockEntity} the item is in
+     * @param stack The {@link ItemStack} that's used to provide data
+     * @return The provider for the given stack
+     */
     public static RenderDataProvider<?> getDataProvider(ProjectorBlockEntity be, ItemStack stack) {
         for (Map.Entry<Predicate<ItemStack>, ItemProjectionBehaviour> entry : REGISTRY.entrySet()) {
             if (!entry.getKey().test(stack)) continue;
@@ -63,7 +80,9 @@ public class ItemProjectionHandler {
         return RenderDataProvider.ItemProvider.from(stack);
     }
 
-
+    /**
+     * A behaviour that defines how to create a {@link RenderDataProvider} for a given {@link ItemStack}
+     */
     @FunctionalInterface
     interface ItemProjectionBehaviour {
         RenderDataProvider<?> getProvider(ProjectorBlockEntity be, ItemStack stack);
