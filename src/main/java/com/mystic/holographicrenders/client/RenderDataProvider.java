@@ -1,20 +1,26 @@
 package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
+import net.minecraft.client.texture.PlayerSkinTexture;
+import net.minecraft.client.texture.ResourceTexture;
 import net.minecraft.client.texture.TextureManager;
+import net.minecraft.client.util.DefaultSkinHelper;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.entity.Entity;
@@ -25,7 +31,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
@@ -266,7 +271,7 @@ public abstract class RenderDataProvider<T> {
                 rot *= facing.getAxis() == Direction.Axis.Z ? facing.getOffsetZ() : 1;
                 rot *= facing.getAxis() == Direction.Axis.X ? facing.getOffsetX() : 1;
                 matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(rot));
-                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(80 * (facing == Direction.EAST ? -1 : 1)));
+                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(90 * (facing == Direction.EAST ? -1 : 1)));
             }
 
             matrices.scale(0.05f, -0.05f, 0.05f); //TODO make this usable with scaling sliders
@@ -398,25 +403,41 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-            if (!textureLoaded) return;
+            if (!textureLoaded) {
+                loadTexture();
+                return;
+            }
 
-//            matrices.translate(0, 3, 0);
-//            matrices.scale(0.01f, -0.01f, 0.01f);
+            matrices.scale(0.1f, -0.1f, 0.1f);
+            matrices.translate(5, -20, 5);
 
-            MinecraftClient.getInstance().getTextureManager().bindTexture(data);
+            PlayerEntity player = MinecraftClient.getInstance().player;
+            double x = player.getX() - be.getPos().getX() - 0.5;
+            double z = player.getZ() - be.getPos().getZ() - 0.5;
+            float rot = (float) MathHelper.atan2(z, x);
+
+            matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
+            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(90));
+
+            matrices.translate(-7.5, 0, 0);
+
+            MinecraftClient.getInstance().getTextureManager().bindTexture(new Identifier(HolographicRenders.MOD_ID, "yeet.png"));
             DrawableHelper.drawTexture(matrices, 0, 0, 0, 0, 16, 16, 16, 16);
         }
 
         private void loadTexture() {
-            if(this.textureLoaded) return;
+            if (this.textureLoaded) return;
 
             final TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
+
             if (textureManager.getTexture(data) != null) {
                 this.textureLoaded = true;
                 return;
             }
 
-            textureManager.loadTextureAsync(data, Util.getMainWorkerExecutor()).whenComplete((unused, throwable) -> this.textureLoaded = true);
+            ResourceTexture texture = new PlayerSkinTexture(FabricLoader.getInstance().getGameDir().resolve("texture_cache").toFile(), "https://i.imgur.com/cWzoapt.png", DefaultSkinHelper.getTexture(), false, () -> {});
+            textureManager.registerTexture(new Identifier(HolographicRenders.MOD_ID, "yeet.png"), texture);
+            textureLoaded = true;
         }
 
         @Override
@@ -430,7 +451,7 @@ public abstract class RenderDataProvider<T> {
         protected void read(CompoundTag tag, ProjectorBlockEntity be) {
             this.data = Identifier.tryParse(tag.getString("Texture"));
             textureLoaded = false;
-            loadTexture();
+//            loadTexture();
         }
 
         @Override
