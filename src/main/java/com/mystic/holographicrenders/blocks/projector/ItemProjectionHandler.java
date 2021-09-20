@@ -48,7 +48,7 @@ public class ItemProjectionHandler {
             }
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.PLAYER_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(new Identifier(HolographicRenders.MOD_ID, "textures/gui/yeet.png")));
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(new Identifier(HolographicRenders.MOD_ID, "textures/gui/yeet.png")));
 
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 
