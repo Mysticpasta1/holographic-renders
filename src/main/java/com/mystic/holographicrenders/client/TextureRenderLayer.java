@@ -1,19 +1,20 @@
 package com.mystic.holographicrenders.client;
 
+import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.mixin.VertexConsumerProviderImmediateAccessor;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.*;
+import net.minecraft.util.Identifier;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import static net.minecraft.client.render.VertexFormats.*;
 
 public class TextureRenderLayer extends RenderLayer {
 
@@ -31,6 +32,7 @@ public class TextureRenderLayer extends RenderLayer {
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableBlend();
     };
+
 
     TextureRenderLayer(RenderLayer original) {
         super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.getVertexFormat(), original.getDrawMode(), original.getExpectedBufferSize(), original.hasCrumbling(), true, () -> {
@@ -57,6 +59,11 @@ public class TextureRenderLayer extends RenderLayer {
             remapped.put(TextureRenderLayer.remap(e.getKey()), new BufferBuilder(e.getKey().getExpectedBufferSize()));
         }
         return new HologramVertexConsumerProvider(new BufferBuilder(256), remapped);
+    }
+
+    @Override
+    public VertexFormat getVertexFormat() {
+        return new VertexFormat(ImmutableList.<VertexFormatElement>builder().add(POSITION_ELEMENT).add(TEXTURE_ELEMENT).build());
     }
 
     public static class HologramVertexConsumerProvider extends VertexConsumerProvider.Immediate {

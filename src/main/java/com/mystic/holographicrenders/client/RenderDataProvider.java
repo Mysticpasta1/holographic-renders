@@ -12,10 +12,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.texture.PlayerSkinTexture;
@@ -428,13 +426,16 @@ public abstract class RenderDataProvider<T> {
 
             TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
 
-            textureManager.bindTexture(texture);
+            //textureManager.bindTexture(texture);
            //DrawableHelper.drawTexture(matrices, 0, 0, 0, 0, 16, 16, 16, 16);
 
-            RenderLayer renderLayer = TextureRenderLayer.getText(texture);
-            BufferBuilder bufferBuilder = (BufferBuilder) immediate.getBuffer(renderLayer);
-            DrawQuad(texture, 0.0f, 0.0f, 20.0f, 20.0f, matrices, textureManager, bufferBuilder);
+            TextureRenderLayer textureRenderLayer = new TextureRenderLayer(RenderLayer.getText(texture));
+            VertexFormat vertexFormat = textureRenderLayer.getVertexFormat();
+            BufferBuilder bufferBuilder = new BufferBuilder(5);
+            bufferBuilder.begin(7, vertexFormat);
+            DrawQuad(texture, 0.0f, 0.0f, 16.0f, 16.0f, matrices, textureManager, bufferBuilder);
             bufferBuilder.end();
+            RenderSystem.enableAlphaTest();
             BufferRenderer.draw(bufferBuilder);
         }
 
@@ -442,10 +443,10 @@ public abstract class RenderDataProvider<T> {
             RenderSystem.bindTexture(Objects.requireNonNull(textureManager.getTexture(texture)).getGlId());
             Matrix4f matrix = stack.peek().getModel();
             float x2 = offX + width, y2 = offY + height;
-            buffer.vertex(matrix, offX, offY, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(0.0f,0.0f).light(1,1).next();
-            buffer.vertex(matrix, offX, y2, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(0.0f,1.0f).light(1,1).next();
-            buffer.vertex(matrix, x2, y2, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(1.0f,1.0f).light(1,1).next();
-            buffer.vertex(matrix, x2, offY, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(1.0f,0.0f).light(1,1).next();
+            buffer.vertex(matrix, offX, offY, 1.0f).texture(0.0f,0.0f).next();
+            buffer.vertex(matrix, offX, y2, 1.0f).texture(0.0f,1.0f).next();
+            buffer.vertex(matrix, x2, y2, 1.0f).texture(1.0f,1.0f).next();
+            buffer.vertex(matrix, x2, offY, 1.0f).texture(1.0f,0.0f).next();
         }
 
 
