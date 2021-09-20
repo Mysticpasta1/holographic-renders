@@ -12,8 +12,9 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawableHelper;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
@@ -34,9 +35,11 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -421,9 +424,30 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(-7.5, 0, 0);
 
-            MinecraftClient.getInstance().getTextureManager().bindTexture(new Identifier(HolographicRenders.MOD_ID, "yeet.png"));
-            DrawableHelper.drawTexture(matrices, 0, 0, 0, 0, 16, 16, 16, 16);
+            Identifier texture = new Identifier(HolographicRenders.MOD_ID, "yeet.png");
+
+            TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
+
+            textureManager.bindTexture(texture);
+           //DrawableHelper.drawTexture(matrices, 0, 0, 0, 0, 16, 16, 16, 16);
+
+            RenderLayer renderLayer = TextureRenderLayer.getText(texture);
+            BufferBuilder bufferBuilder = (BufferBuilder) immediate.getBuffer(renderLayer);
+            DrawQuad(texture, 0.0f, 0.0f, 20.0f, 20.0f, matrices, textureManager, bufferBuilder);
+            bufferBuilder.end();
+            BufferRenderer.draw(bufferBuilder);
         }
+
+        public void DrawQuad(Identifier texture, float offX, float offY, float width, float height, MatrixStack stack , TextureManager textureManager, BufferBuilder buffer) {
+            RenderSystem.bindTexture(Objects.requireNonNull(textureManager.getTexture(texture)).getGlId());
+            Matrix4f matrix = stack.peek().getModel();
+            float x2 = offX + width, y2 = offY + height;
+            buffer.vertex(matrix, offX, offY, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(0.0f,0.0f).light(1,1).next();
+            buffer.vertex(matrix, offX, y2, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(0.0f,1.0f).light(1,1).next();
+            buffer.vertex(matrix, x2, y2, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(1.0f,1.0f).light(1,1).next();
+            buffer.vertex(matrix, x2, offY, 1.0f).color(1.0f, 1.0f, 1.0f, 1.0f).texture(1.0f,0.0f).light(1,1).next();
+        }
+
 
         private void loadTexture() {
             if (this.textureLoaded) return;

@@ -50,7 +50,7 @@ public class HolographicRenders implements ModInitializer {
         Registry.register(Registry.BLOCK_ENTITY_TYPE, PROJECTOR_ID, PROJECTOR_BLOCK_ENTITY);
 
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "area_scanner"), AREA_SCANNER);
-        //Registry.register(Registry.ITEM, new Identifier(MOD_ID, "player_scanner"), PLAYER_SCANNER); //TODO player scanning
+        Registry.register(Registry.ITEM, new Identifier(MOD_ID, "player_scanner"), PLAYER_SCANNER);
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
 
         ServerPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.ACTION_REQUEST_ID, ProjectorScreenPacket::onActionRequest);
