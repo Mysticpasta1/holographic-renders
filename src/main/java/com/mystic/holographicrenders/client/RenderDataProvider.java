@@ -436,6 +436,7 @@ public abstract class RenderDataProvider<T> {
             DrawQuad(texture, 0.0f, 0.0f, 16.0f, 16.0f, matrices, textureManager, bufferBuilder);
             bufferBuilder.end();
             RenderSystem.enableAlphaTest();
+            RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
         }
 

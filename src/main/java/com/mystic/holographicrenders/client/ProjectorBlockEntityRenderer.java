@@ -1,5 +1,6 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.minecraft.client.MinecraftClient;
