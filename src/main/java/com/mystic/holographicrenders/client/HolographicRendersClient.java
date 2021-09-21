@@ -2,6 +2,7 @@ package com.mystic.holographicrenders.client;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.gui.ProjectorScreen;
+import com.mystic.holographicrenders.gui.TextboxScreen;
 import com.mystic.holographicrenders.network.ProjectorScreenPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -17,6 +18,8 @@ public class HolographicRendersClient implements ClientModInitializer {
         RenderDataProvider.registerDefaultProviders();
 
         ScreenRegistry.register(HolographicRenders.PROJECTOR_SCREEN_HANDLER, ProjectorScreen::new);
+
+        ScreenRegistry.register(HolographicRenders.TEXTBOX_SCREEN_HANDLER, TextboxScreen::new);
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.UPDATE_ID, ProjectorScreenPacket::onClientUpdate);
     }

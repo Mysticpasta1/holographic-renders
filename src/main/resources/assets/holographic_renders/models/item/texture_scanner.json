@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "holographic_renders:item/player_scanner"
+    "layer0": "holographic_renders:item/texture_scanner"
   }
 }

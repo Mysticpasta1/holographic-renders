@@ -456,12 +456,12 @@ public abstract class RenderDataProvider<T> {
 
             final TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
 
-            if (textureManager.getTexture(data) != null) { //https://i.imgur.com/cWzoapt.png
+            if (textureManager.getTexture(data) != null) { //https://i.imgur.com/oYoJrAR.jpeg
                 this.textureLoaded = true;
                 return;
             }
 
-            ResourceTexture texture = new PlayerSkinTexture(FabricLoader.getInstance().getGameDir().resolve("texture_cache").toFile(), "https://i.imgur.com/oYoJrAR.jpeg", DefaultSkinHelper.getTexture(), false, () -> {});
+            ResourceTexture texture = new PlayerSkinTexture(FabricLoader.getInstance().getGameDir().resolve("texture_cache").toFile(), "https://i.imgur.com/cWzoapt.png", DefaultSkinHelper.getTexture(), false, () -> {});
             textureManager.registerTexture(new Identifier(HolographicRenders.MOD_ID, "yeet.png"), texture);
             textureLoaded = true;
         }

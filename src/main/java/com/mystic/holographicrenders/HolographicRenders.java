@@ -3,6 +3,7 @@ package com.mystic.holographicrenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
+import com.mystic.holographicrenders.gui.TextboxScreenHandler;
 import com.mystic.holographicrenders.item.AreaScannerItem;
 import com.mystic.holographicrenders.item.EntityScannerItem;
 import com.mystic.holographicrenders.item.TextureScannerItem;
@@ -36,10 +37,13 @@ public class HolographicRenders implements ModInitializer {
     public static final BlockEntityType<ProjectorBlockEntity> PROJECTOR_BLOCK_ENTITY = BlockEntityType.Builder.create(ProjectorBlockEntity::new, PROJECTOR_BLOCK).build(null);
 
     public static final Identifier PROJECTOR_ID = new Identifier(MOD_ID, "projector");
+    public static final Identifier TEXTBOX_ID = new Identifier(MOD_ID, "textbox");
     public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER;
+    public static final ScreenHandlerType<TextboxScreenHandler> TEXTBOX_SCREEN_HANDLER;
 
     static {
         PROJECTOR_SCREEN_HANDLER = ScreenHandlerRegistry.registerSimple(PROJECTOR_ID, ProjectorScreenHandler::new);
+        TEXTBOX_SCREEN_HANDLER = ScreenHandlerRegistry.registerSimple(TEXTBOX_ID, (syncId, playerInventory) -> new TextboxScreenHandler(syncId, new TextureScannerItem()));
     }
 
     @Override
