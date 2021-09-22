@@ -5,6 +5,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
+import com.mystic.holographicrenders.gui.TextboxScreen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
@@ -12,7 +13,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawableHelper;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
@@ -20,6 +21,7 @@ import net.minecraft.client.texture.PlayerSkinTexture;
 import net.minecraft.client.texture.ResourceTexture;
 import net.minecraft.client.texture.TextureManager;
 import net.minecraft.client.util.DefaultSkinHelper;
+import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.entity.Entity;
@@ -456,14 +458,18 @@ public abstract class RenderDataProvider<T> {
 
             final TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
 
-            if (textureManager.getTexture(data) != null) { //https://i.imgur.com/oYoJrAR.jpeg
+            if (textureManager.getTexture(data) != null) { //
                 this.textureLoaded = true;
                 return;
             }
 
-            ResourceTexture texture = new PlayerSkinTexture(FabricLoader.getInstance().getGameDir().resolve("texture_cache").toFile(), "https://i.imgur.com/cWzoapt.png", DefaultSkinHelper.getTexture(), false, () -> {});
+            Window window = MinecraftClient.getInstance().getWindow();
+            TextRenderer textRenderer =  MinecraftClient.getInstance().textRenderer;
+
+            ResourceTexture texture = new PlayerSkinTexture(FabricLoader.getInstance().getGameDir().resolve("texture_cache").toFile(), new TextboxScreenRoot().getUrl(), DefaultSkinHelper.getTexture(), false, () -> {});
             textureManager.registerTexture(new Identifier(HolographicRenders.MOD_ID, "yeet.png"), texture);
             textureLoaded = true;
+
         }
 
         @Override

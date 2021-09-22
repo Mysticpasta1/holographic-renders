@@ -8,6 +8,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendereregistry.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
+import net.minecraft.client.MinecraftClient;
 
 public class HolographicRendersClient implements ClientModInitializer {
 
@@ -18,8 +19,6 @@ public class HolographicRendersClient implements ClientModInitializer {
         RenderDataProvider.registerDefaultProviders();
 
         ScreenRegistry.register(HolographicRenders.PROJECTOR_SCREEN_HANDLER, ProjectorScreen::new);
-
-        ScreenRegistry.register(HolographicRenders.TEXTBOX_SCREEN_HANDLER, TextboxScreen::new);
 
         ClientPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.UPDATE_ID, ProjectorScreenPacket::onClientUpdate);
     }
