@@ -2,7 +2,9 @@ package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
+import com.mystic.holographicrenders.client.TextboxScreenRoot;
 import com.mystic.holographicrenders.item.EntityScannerItem;
+import com.mystic.holographicrenders.item.TextureScannerItem;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -22,6 +24,7 @@ public class ItemProjectionHandler {
     private static final HashMap<Predicate<ItemStack>, ItemProjectionBehaviour> REGISTRY = new HashMap<>();
 
     static {
+        final CompoundTag compoundTag = new CompoundTag();
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
             final BlockPos pos = be.getPos();
@@ -48,7 +51,7 @@ public class ItemProjectionHandler {
             }
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(new Identifier(HolographicRenders.MOD_ID, "textures/gui/yeet.png")));
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(compoundTag.getString("URL")));
 
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 

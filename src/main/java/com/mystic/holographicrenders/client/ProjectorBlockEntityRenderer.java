@@ -15,6 +15,8 @@ import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Matrix4f;
 
+import java.net.MalformedURLException;
+
 public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorBlockEntity> {
 
     private static VertexConsumerProvider.Immediate immediate;
@@ -107,7 +109,6 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             matrices.push();
             entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
             matrices.pop();
-
         }
 
         matrices.pop();
