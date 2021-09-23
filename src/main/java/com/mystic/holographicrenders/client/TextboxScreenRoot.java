@@ -11,6 +11,7 @@ import net.minecraft.text.Text;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.Objects;
 
 
@@ -21,9 +22,14 @@ public class TextboxScreenRoot extends LightweightGuiDescription {
     public static URL url;
     public final CompoundTag compoundTag = new CompoundTag();
     public static String urlText;
+    public static int texture;
 
     public URL getURL(){
         return url;
+    }
+
+    public int getTexture(){
+        return texture;
     }
 
     public TextboxScreenRoot() {
@@ -55,6 +61,7 @@ public class TextboxScreenRoot extends LightweightGuiDescription {
                    url = new URL(text);
                    urlText =  url.toString();
                    RenderDataProvider.TextureProvider.of(url.toString()).createFileAndLoad();
+                   texture = RenderDataProvider.TextureProvider.of(url.toString()).loadTexture("hologramimages/hologramimages/" + url.getFile().toLowerCase(Locale.ROOT) + ".png");
                 } catch (MalformedURLException e) {
                     if(!e.toString().isEmpty()) {
                         textFieldWidget.setText("valid URL not found pls try again!");

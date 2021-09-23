@@ -5,7 +5,6 @@ import com.mystic.holographicrenders.client.TextboxScreenRoot;
 import com.mystic.holographicrenders.gui.TextboxScreen;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -19,11 +18,34 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class TextureScannerItem extends Item {
 
     public CompoundTag tag = new CompoundTag();
+
+
+    public CompoundTag getTag(ItemStack itemStack){
+        TextboxScreenRoot root = new TextboxScreenRoot();
+        if(root.getURL() != null) {
+            CompoundTag compoundTag = itemStack.getOrCreateTag();
+            compoundTag.putString("URL", root.getURL().toString());
+            int[] previous = compoundTag.getIntArray("Texture");
+            List<Integer> list = IntStream.of(previous).boxed().collect(Collectors.toList());
+            int texture = root.getTexture();
+            if(!list.contains(texture)) {
+                list.add(texture);
+            }
+            compoundTag.putIntArray("Texture", list);
+            itemStack.toTag(compoundTag);
+            this.tag = compoundTag;
+            return itemStack.getTag();
+        }
+        return tag;
+    }
 
     public TextureScannerItem() {
         super(new Settings().maxCount(1).group(HolographicRenders.HOLOGRAPHIC_RENDERS_CREATIVE_TAB));
@@ -36,14 +58,23 @@ public class TextureScannerItem extends Item {
 
         if (!world.isClient) return TypedActionResult.success(itemStack);
 
-        MinecraftClient.getInstance().openScreen(new TextboxScreen(new TextboxScreenRoot()));
+        TextboxScreenRoot root = new TextboxScreenRoot();
+
+        MinecraftClient.getInstance().openScreen(new TextboxScreen(root));
 
         if(player.isSneaking() && itemStack.getOrCreateTag().contains("URL")) {
             itemStack.getOrCreateTag().remove("URL");
         } else {
-            if(new TextboxScreenRoot().getURL() != null) {
+            if(root.getURL() != null) {
                 CompoundTag compoundTag = itemStack.getOrCreateTag();
-                compoundTag.putString("URL", new TextboxScreenRoot().getURL().toString());
+                compoundTag.putString("URL", root.getURL().toString());
+                int[] previous = compoundTag.getIntArray("Texture");
+                List<Integer> list = IntStream.of(previous).boxed().collect(Collectors.toList());
+                int texture = root.getTexture();
+                if(!list.contains(texture)) {
+                    list.add(texture);
+                }
+                compoundTag.putIntArray("Texture", list);
                 itemStack.toTag(compoundTag);
                 this.tag = compoundTag;
             }

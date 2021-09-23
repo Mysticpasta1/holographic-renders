@@ -1,6 +1,7 @@
 package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
@@ -8,7 +9,6 @@ import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import com.mystic.holographicrenders.item.TextureScannerItem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -16,8 +16,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
-import net.minecraft.client.texture.AbstractTexture;
-import net.minecraft.client.texture.PlayerSkinTexture;
 import net.minecraft.client.texture.TextureManager;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.util.math.Vector3f;
@@ -26,7 +24,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
@@ -37,17 +34,19 @@ import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.apache.commons.io.FileUtils;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.*;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Random;
+import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,7 +63,7 @@ public abstract class RenderDataProvider<T> {
     }
 
     @Environment(EnvType.CLIENT)
-    public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be);
+    public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException;
 
     public void toTag(CompoundTag tag, ProjectorBlockEntity be) {
         tag.putString("RendererType", getTypeId().toString());
@@ -403,15 +402,14 @@ public abstract class RenderDataProvider<T> {
     }
 
     public static class TextureProvider extends RenderDataProvider<String> {
-
+        CompoundTag compoundTag = new CompoundTag();
+        CompoundTag tag = new TextureScannerItem().getTag(HolographicRenders.TEXTURE_SCANNER.getDefaultStack());
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "texture");
-        private boolean textureLoaded = false;
 
         protected TextureProvider(String data) {
             super(data);
             if (data == null) return;
-            final CompoundTag compoundTag = new CompoundTag();
-            compoundTag.getCompound("URL").putString("URL", data);
+            compoundTag.getCompound("URL").putString("Data", data);
         }
 
         public static TextureProvider of(String url) {
@@ -419,11 +417,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-            if (!textureLoaded) {
-                loadTexture(MinecraftClient.getInstance().getTextureManager());
-                return;
-            }
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
 
             matrices.scale(0.1f, -0.1f, 0.1f);
             matrices.translate(5, -20, 5);
@@ -438,24 +432,24 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(-7.5, 0, 0);
 
-            final CompoundTag compoundTag = new CompoundTag();
-            Identifier texture = new Identifier(HolographicRenders.MOD_ID, HolographicRenders.MOD_ID + "/hologramimages/" + compoundTag.getString("URL"));
 
-            TextureManager textureManager = MinecraftClient.getInstance().getTextureManager();
-
-            TextureRenderLayer textureRenderLayer = new TextureRenderLayer(RenderLayer.getText(texture));
+            Identifier identifierTexture = new Identifier(HolographicRenders.MOD_ID, "yeet.png");
+            TextureRenderLayer textureRenderLayer = new TextureRenderLayer(RenderLayer.getText(identifierTexture));
             VertexFormat vertexFormat = textureRenderLayer.getVertexFormat();
             BufferBuilder bufferBuilder = new BufferBuilder(5);
             bufferBuilder.begin(7, vertexFormat);
-            DrawQuad(texture, 0.0f, 0.0f, 16.0f, 16.0f, matrices, textureManager, bufferBuilder);
+            System.out.println(Arrays.toString(tag.getIntArray("Texture")));
+            for(Integer texture: tag.getIntArray("Texture")){
+                DrawQuad(texture, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
+            }
             bufferBuilder.end();
             RenderSystem.enableAlphaTest();
             RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
         }
 
-        public void DrawQuad(Identifier texture, float offX, float offY, float width, float height, MatrixStack stack, TextureManager textureManager, BufferBuilder buffer) {
-            RenderSystem.bindTexture(Objects.requireNonNull(textureManager.getTexture(texture)).getGlId());
+        public void DrawQuad(int texture, float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
             Matrix4f matrix = stack.peek().getModel();
             float x2 = offX + width, y2 = offY + height;
             buffer.vertex(matrix, offX, offY, 1.0f).texture(0.0f, 0.0f).next();
@@ -464,53 +458,87 @@ public abstract class RenderDataProvider<T> {
             buffer.vertex(matrix, x2, offY, 1.0f).texture(1.0f, 0.0f).next();
         }
 
+        public int loadTexture(String loc) {
+            GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
+            GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
+            BufferedImage image = loadImage(loc);
+            if(image != null) {
+                int[] pixels = new int[image.getWidth() * image.getHeight()];
+                image.getRGB(0, 0, image.getWidth(), image.getHeight(), pixels, 0, image.getWidth());
 
-        private void loadTexture(TextureManager textureManager) {
-            if (this.textureLoaded) return;
+                ByteBuffer buffer = BufferUtils.createByteBuffer(image.getWidth() * image.getHeight() * 4);
+                Color c;
 
-            final CompoundTag compoundTag = new CompoundTag();
-            if (textureManager.getTexture(new Identifier(HolographicRenders.MOD_ID, compoundTag.getString("URL"))) != null) { //
-                this.textureLoaded = true;
-                return;
-            }
-
-            System.out.println(new TextboxScreenRoot());
-
-            textureManager.registerTexture(new Identifier(HolographicRenders.MOD_ID, HolographicRenders.MOD_ID + "/hologramimages/"), new AbstractTexture() {
-                @Override
-                public void load(ResourceManager manager) throws IOException {
-                    System.out.println(new Identifier(HolographicRenders.MOD_ID, HolographicRenders.MOD_ID + "/hologramimages/"));
+                for (int y = 0; y < image.getHeight(); y++) {
+                    for (int x = 0; x < image.getWidth(); x++) {
+                        c = new Color(image.getRGB(x, y));
+                        buffer.put((byte) c.getRed());
+                        buffer.put((byte) c.getGreen());
+                        buffer.put((byte) c.getBlue());
+                        buffer.put((byte) c.getAlpha());
+                    }
                 }
-            });
+                buffer.flip();
 
-            textureLoaded = true;
+            int textureID = GL11.glGenTextures(); //Generate texture ID
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureID); //Bind texture ID
 
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.getWidth(), image.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
+
+            return textureID;
+            } else {
+                System.out.println("image is null");
+            }
+            return 0;
         }
 
+        private BufferedImage loadImage(String loc) {
+            try {
+                return ImageIO.read(new File(loc));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        /*private void loadTextures(TextureManager textureManager) throws MalformedURLException {
+
+            NamespaceResourceManager namespaceResourceManager = new NamespaceResourceManager(ResourceType.CLIENT_RESOURCES, "hologramimages");
+
+            textureManager.registerTexture(new Identifier("hologramimages", "hologramimages" + new URL(tag.getString("URL")).getFile().toLowerCase(Locale.ROOT) + ".png"), new AbstractTexture() {
+                @Override
+                public void load(ResourceManager manager) throws IOException {
+                    manager.getAllResources(new Identifier("hologramimages", "hologramimages" + new URL(tag.getString("URL")).getFile().toLowerCase(Locale.ROOT) + ".png" ));
+                }
+            });
+        }*/
+
         public void createFileAndLoad(){
-            CompoundTag compoundTag = new CompoundTag();
             new TextureScannerItem();
             try {
                 ArrayList<String> URLArray = new ArrayList<>();
-                String dir = HolographicRenders.MOD_ID + "/hologramimages/";
+                String dir = "hologramimages" + "/hologramimages/";
                 File folder = new File(dir);
                 if (folder.mkdirs()) {
                     System.out.println("Directory is created!");
                 } else {
-                    System.out.println("Failed to create directory!");
+                    System.out.println("Failed to create directory! or Directory is already created!");
                 }
                 for(int i = 0; i < 1; i ++) {
-                    Random random = new Random();
                     URL url = new TextboxScreenRoot().getURL();
                     if(url != null) {
                         URLArray.add(url.toString());
                         for (String s : URLArray) {
-                            final Pattern pattern = Pattern.compile("^.*[a-zA-Z]+*.[a-zA-Z]+*.[a-zA-Z]+*.[a-zA-Z]+*.[a-zA-Z]+*.[a-zA-Z]+*.[a-zA-Z]+$", Pattern.CASE_INSENSITIVE);
-                            String input = pattern.pattern();
-                            final Matcher matcher = pattern.matcher(input);
+                            final Pattern pattern = Pattern.compile("[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]", Pattern.CASE_INSENSITIVE);
+                            final Matcher matcher = pattern.matcher(s);
                             if (!matcher.matches()) {
-                                File files = new File(s);
-                                FileUtils.copyURLToFile(new URL(s), new File(HolographicRenders.MOD_ID + "/hologramimages/" + url.getFile() + ".png"));
+                                FileUtils.copyURLToFile(new URL(s), new File("hologramimages" + "/hologramimages/" + url.getFile().toLowerCase(Locale.ROOT) + ".png"));
                                 System.out.println("image downloaded");
                             }
                         }
@@ -533,8 +561,6 @@ public abstract class RenderDataProvider<T> {
         @Override
         protected void read(CompoundTag tag, ProjectorBlockEntity be) {
             this.data = tag.getString("URL");
-            textureLoaded = false;
-//            loadTexture();
         }
 
         @Override

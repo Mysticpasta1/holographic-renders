@@ -107,7 +107,11 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             HologramRenderLayer.setAlpha(entity.getAlpha());
 
             matrices.push();
-            entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
+            try {
+                entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
+            } catch (MalformedURLException ignored) {
+
+            }
             matrices.pop();
         }
 
