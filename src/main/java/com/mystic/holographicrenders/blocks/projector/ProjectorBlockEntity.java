@@ -3,10 +3,10 @@ package com.mystic.holographicrenders.blocks.projector;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
+import com.mystic.holographicrenders.client.TextboxScreenRoot;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,15 +14,15 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 
 public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, NamedScreenHandlerFactory, ImplementedInventory {
 
@@ -30,6 +30,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     private float alpha;
     private boolean lightEnabled = true;
+    private int[] texture;
 
     @NotNull
     private RenderDataProvider<?> renderer = RenderDataProvider.EmptyProvider.INSTANCE;
@@ -74,12 +75,21 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
+        texture = tag.getIntArray("Texture");
 
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
         renderer.fromTag(tag, this);
 
         Inventories.fromTag(tag, inventory);
+    }
+
+    public int[] makeIntArrayTexture() {
+        int[] current = new int[0];
+        current = Arrays.copyOf(current, current.length + 1);
+        current[current.length - 1] = new TextboxScreenRoot().getTexture();
+        System.out.println(Arrays.toString(current));
+        return current;
     }
 
     @Override
@@ -96,6 +106,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     public CompoundTag toTag(CompoundTag tag) {
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
+        tag.putIntArray("Texture", makeIntArrayTexture());
 
         renderer.toTag(tag, this);
 

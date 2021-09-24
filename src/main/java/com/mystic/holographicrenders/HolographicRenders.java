@@ -2,7 +2,6 @@ package com.mystic.holographicrenders;
 
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import com.mystic.holographicrenders.item.AreaScannerItem;
 import com.mystic.holographicrenders.item.EntityScannerItem;
@@ -18,13 +17,9 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
-
-import java.io.File;
-import java.io.IOException;
 
 public class HolographicRenders implements ModInitializer {
 

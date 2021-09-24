@@ -18,34 +18,9 @@ import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class TextureScannerItem extends Item {
-
-    public CompoundTag tag = new CompoundTag();
-
-
-    public CompoundTag getTag(ItemStack itemStack){
-        TextboxScreenRoot root = new TextboxScreenRoot();
-        if(root.getURL() != null) {
-            CompoundTag compoundTag = itemStack.getOrCreateTag();
-            compoundTag.putString("URL", root.getURL().toString());
-            int[] previous = compoundTag.getIntArray("Texture");
-            List<Integer> list = IntStream.of(previous).boxed().collect(Collectors.toList());
-            int texture = root.getTexture();
-            if(!list.contains(texture)) {
-                list.add(texture);
-            }
-            compoundTag.putIntArray("Texture", list);
-            itemStack.toTag(compoundTag);
-            this.tag = compoundTag;
-            return itemStack.getTag();
-        }
-        return tag;
-    }
 
     public TextureScannerItem() {
         super(new Settings().maxCount(1).group(HolographicRenders.HOLOGRAPHIC_RENDERS_CREATIVE_TAB));
@@ -62,35 +37,21 @@ public class TextureScannerItem extends Item {
 
         MinecraftClient.getInstance().openScreen(new TextboxScreen(root));
 
-        if(player.isSneaking() && itemStack.getOrCreateTag().contains("URL")) {
-            itemStack.getOrCreateTag().remove("URL");
-        } else {
-            if(root.getURL() != null) {
-                CompoundTag compoundTag = itemStack.getOrCreateTag();
-                compoundTag.putString("URL", root.getURL().toString());
-                int[] previous = compoundTag.getIntArray("Texture");
-                List<Integer> list = IntStream.of(previous).boxed().collect(Collectors.toList());
-                int texture = root.getTexture();
-                if(!list.contains(texture)) {
-                    list.add(texture);
-                }
-                compoundTag.putIntArray("Texture", list);
-                itemStack.toTag(compoundTag);
-                this.tag = compoundTag;
-            }
-        }
-
         return TypedActionResult.success(itemStack);
     }
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         CompoundTag stackTag = stack.getOrCreateTag();
-
+        TextboxScreenRoot root = new TextboxScreenRoot();
+        if(root.getURL() != null) {
+            stackTag.putString("URL", root.getURL().toString());
+        }
         if (stackTag.contains("URL")) {
-            tooltip.add(new LiteralText("§2URL: ").append(new TranslatableText(stackTag.getString("URL")).formatted(Formatting.YELLOW)));
+            tooltip.add(new LiteralText("§2URL: ").append(new TranslatableText(stackTag.getCompound("ItemStuff").getString("URL")).formatted(Formatting.YELLOW)));
         } else {
             tooltip.add(new LiteralText("§7Blank"));
+
         }
     }
 }

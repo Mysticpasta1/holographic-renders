@@ -1,6 +1,5 @@
 package com.mystic.holographicrenders.client;
 
-import com.mystic.holographicrenders.item.TextureScannerItem;
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription;
 import io.github.cottonmc.cotton.gui.widget.WButton;
 import io.github.cottonmc.cotton.gui.widget.WGridPanel;
@@ -61,7 +60,7 @@ public class TextboxScreenRoot extends LightweightGuiDescription {
                    url = new URL(text);
                    urlText =  url.toString();
                    RenderDataProvider.TextureProvider.of(url.toString()).createFileAndLoad();
-                   texture = RenderDataProvider.TextureProvider.of(url.toString()).loadTexture("hologramimages/hologramimages/" + url.getFile().toLowerCase(Locale.ROOT) + ".png");
+                   texture =  RenderDataProvider.TextureProvider.of(url.toString()).loadTexture("hologramimages/hologramimages/" + url.getFile().toLowerCase(Locale.ROOT) + ".png");
                 } catch (MalformedURLException e) {
                     if(!e.toString().isEmpty()) {
                         textFieldWidget.setText("valid URL not found pls try again!");
