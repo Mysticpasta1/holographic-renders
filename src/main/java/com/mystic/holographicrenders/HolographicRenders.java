@@ -9,21 +9,28 @@ import com.mystic.holographicrenders.item.TextureScannerItem;
 import com.mystic.holographicrenders.network.ProjectorScreenPacket;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.World;
+import org.lwjgl.system.CallbackI;
 
 public class HolographicRenders implements ModInitializer {
 
     public static final String MOD_ID = "holographic_renders";
+    ProjectorBlockEntity be = new ProjectorBlockEntity();
 
     public static final ItemGroup HOLOGRAPHIC_RENDERS_CREATIVE_TAB = FabricItemGroupBuilder.create(new Identifier(MOD_ID, "general")).icon(() -> new ItemStack(HolographicRenders.PROJECTOR_BLOCK)).build().setName("holographic_renders:textures/gui/hologram_tab.png");
 
@@ -56,5 +63,15 @@ public class HolographicRenders implements ModInitializer {
         Registry.register(Registry.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
 
         ServerPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.ACTION_REQUEST_ID, ProjectorScreenPacket::onActionRequest);
+        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
+            String url = buf.readString();
+            Hand hand = buf.readEnumConstant(Hand.class);
+            server.execute(() -> {
+                ItemStack stack = player.getStackInHand(hand);
+                if(stack.getItem() instanceof TextureScannerItem) {
+                    stack.getOrCreateTag().putString("URL", url);
+                }
+            });
+        });
     }
 }

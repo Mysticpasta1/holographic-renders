@@ -2,20 +2,16 @@ package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
-import com.mystic.holographicrenders.client.TextboxScreenRoot;
 import com.mystic.holographicrenders.item.EntityScannerItem;
 import com.mystic.holographicrenders.item.TextureScannerItem;
-import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -25,8 +21,6 @@ public class ItemProjectionHandler {
     private static final HashMap<Predicate<ItemStack>, ItemProjectionBehaviour> REGISTRY = new HashMap<>();
 
     static {
-        final CompoundTag compoundTag = new CompoundTag();
-
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
             final BlockPos pos = be.getPos();
 
@@ -52,7 +46,7 @@ public class ItemProjectionHandler {
             }
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(compoundTag.getString("URL")));
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(be.getUrl()));
 
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 

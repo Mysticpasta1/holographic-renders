@@ -12,13 +12,16 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
+import net.minecraft.world.World;
 
 public class ProjectorScreenHandler extends ScreenHandler {
 
     private final Inventory inventory;
+    private final World world;
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory) {
         this(syncId, playerInventory, new SimpleInventory(1));
+
     }
 
     public ProjectorBlockEntity getBE(){
@@ -27,10 +30,21 @@ public class ProjectorScreenHandler extends ScreenHandler {
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory) {
         super(HolographicRenders.PROJECTOR_SCREEN_HANDLER, syncId);
+        world = playerInventory.player.getEntityWorld();
         checkSize(inventory, 1);
         this.inventory = inventory;
 
-        this.addSlot(new Slot(inventory, 0, 80, 35));
+        this.addSlot(new Slot(inventory, 0, 80, 35) {
+                 @Override
+                 public void markDirty() {
+                     super.markDirty();
+                     if(!world.isClient) {
+                         getBE().getItems().set(0, getStack());
+                         world.updateListeners(getBE().getPos(), getBE().getCachedState(), getBE().getCachedState(), 3);
+                     }
+                 }
+             }
+        );
 
         int m;
         int l;

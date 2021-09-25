@@ -23,6 +23,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
@@ -76,14 +77,13 @@ public abstract class RenderDataProvider<T> {
     }
 
     public static void registerDefaultProviders() {
-        final CompoundTag compoundTag = new CompoundTag();
         RenderDataProviderRegistry.register(ItemProvider.ID, () -> new ItemProvider(ItemStack.EMPTY));
         RenderDataProviderRegistry.register(BlockProvider.ID, () -> new BlockProvider(Blocks.AIR.getDefaultState()));
         RenderDataProviderRegistry.register(EntityProvider.ID, () -> new EntityProvider(null));
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(new Pair<>(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
-        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(compoundTag.getString("URL")));
+        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(0));
     }
 
     protected abstract CompoundTag write(ProjectorBlockEntity be);
@@ -402,23 +402,15 @@ public abstract class RenderDataProvider<T> {
         }
     }
 
-    public static class TextureProvider extends RenderDataProvider<String> {
-        ItemStack stack = HolographicRenders.TEXTURE_SCANNER.getDefaultStack();
-        CompoundTag tag  = stack.getOrCreateTag();
+    public static class TextureProvider extends RenderDataProvider<Integer> {
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "texture");
-        ProjectorBlockEntity be = new ProjectorBlockEntity();
-        int[] texture = be.makeIntArrayTexture();
 
-
-
-        protected TextureProvider(String data) {
+        protected TextureProvider(int data) {
             super(data);
-            if (data == null) return;
-            tag.getCompound("URL").putString("Data", data);
         }
 
         public static TextureProvider of(String url) {
-            return new TextureProvider(url);
+            return new TextureProvider(loadTexture(url));
         }
 
         @Override
@@ -427,34 +419,32 @@ public abstract class RenderDataProvider<T> {
             matrices.push();
             matrices.scale(0.1f, -0.1f, 0.1f);
             matrices.translate(5, -20, 5);
-            matrices.pop();
 
             PlayerEntity player = MinecraftClient.getInstance().player;
             double x = player.getX() - be.getPos().getX() - 0.5;
             double z = player.getZ() - be.getPos().getZ() - 0.5;
             float rot = (float) MathHelper.atan2(z, x);
 
-            matrices.push();
             matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
             matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(90));
 
             matrices.translate(-7.5, 0, 0);
-            matrices.pop();
+
 
             Identifier identifierTexture = new Identifier(HolographicRenders.MOD_ID, "yeet.png");
             TextureRenderLayer textureRenderLayer = new TextureRenderLayer(RenderLayer.getText(identifierTexture));
             VertexFormat vertexFormat = textureRenderLayer.getVertexFormat();
             BufferBuilder bufferBuilder = new BufferBuilder(5);
             bufferBuilder.begin(7, vertexFormat);
-
-            for(Integer texture: texture) {
-                DrawQuad(texture, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
-            }
+            System.out.println(data);
+            DrawQuad(data, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
             bufferBuilder.end();
             RenderSystem.enableAlphaTest();
             RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
-
+            RenderSystem.disableAlphaTest();
+            RenderSystem.disableDepthTest();
+            matrices.pop();
         }
 
         public void DrawQuad(int texture, float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
@@ -465,10 +455,9 @@ public abstract class RenderDataProvider<T> {
             buffer.vertex(matrix, offX, y2, 1.0f).texture(0.0f, 1.0f).next();
             buffer.vertex(matrix, x2, y2, 1.0f).texture(1.0f, 1.0f).next();
             buffer.vertex(matrix, x2, offY, 1.0f).texture(1.0f, 0.0f).next();
-
         }
 
-        public int loadTexture(String loc) {
+        public static int loadTexture(String loc) {
             GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
             GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
             BufferedImage image = loadImage(loc);
@@ -508,16 +497,16 @@ public abstract class RenderDataProvider<T> {
             return 0;
         }
 
-        private BufferedImage loadImage(String loc) {
+        private static BufferedImage loadImage(String loc) {
             try {
-                return ImageIO.read(new File(loc));
+                return ImageIO.read(new URL(loc));
             } catch (IOException e) {
                 e.printStackTrace();
             }
             return null;
         }
 
-        public void createFileAndLoad(){
+       /* public void createFileAndLoad(){
             new TextureScannerItem();
             try {
                 ArrayList<String> URLArray = new ArrayList<>();
@@ -552,18 +541,18 @@ public abstract class RenderDataProvider<T> {
             } catch (IOException e) {
                 System.out.println("file not found or Failed to create directory!" + e.getMessage());
             }
-        }
+        }*/
 
         @Override
         protected CompoundTag write(ProjectorBlockEntity be) {
             final CompoundTag tag = new CompoundTag();
-            tag.putString("URL", data);
+            tag.putInt("Texture", data);
             return tag;
         }
 
         @Override
         protected void read(CompoundTag tag, ProjectorBlockEntity be) {
-            this.data = tag.getString("URL");
+            this.data = tag.getInt("Texture");
         }
 
         @Override

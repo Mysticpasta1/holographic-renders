@@ -19,10 +19,6 @@ public class HolographicRendersClient implements ClientModInitializer {
 
         ScreenRegistry.register(HolographicRenders.PROJECTOR_SCREEN_HANDLER, ProjectorScreen::new);
 
-        final CompoundTag compoundTag = new CompoundTag();
-
-        RenderDataProvider.TextureProvider.of(compoundTag.getString("URL")).createFileAndLoad();
-
         ClientPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.UPDATE_ID, ProjectorScreenPacket::onClientUpdate);
     }
 }

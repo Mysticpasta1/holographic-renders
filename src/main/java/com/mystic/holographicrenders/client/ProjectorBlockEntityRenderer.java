@@ -1,6 +1,5 @@
 package com.mystic.holographicrenders.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -16,10 +15,13 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Matrix4f;
 
 import java.net.MalformedURLException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorBlockEntity> {
 
     private static VertexConsumerProvider.Immediate immediate;
+    private final Map<String, RenderDataProvider.TextureProvider> providers = new HashMap<>();
 
     public ProjectorBlockEntityRenderer(BlockEntityRenderDispatcher dispatcher) {
         super(dispatcher);
@@ -103,16 +105,11 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             matrices.pop();
         }
 
-        if (entity.getAlpha() != 0) {
+        if (entity.getAlpha() != 0 || true) {
             HologramRenderLayer.setAlpha(entity.getAlpha());
 
             matrices.push();
-            try {
-                entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
-            } catch (MalformedURLException ignored) {
-
-            }
-            matrices.pop();
+            providers.computeIfAbsent(entity.getUrl(), RenderDataProvider.TextureProvider::of).render(matrices, immediate, tickDelta, light, overlay, entity);
         }
 
         matrices.pop();

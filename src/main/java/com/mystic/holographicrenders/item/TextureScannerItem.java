@@ -11,7 +11,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
@@ -31,27 +30,20 @@ public class TextureScannerItem extends Item {
 
         ItemStack itemStack = player.getStackInHand(hand);
 
-        if (!world.isClient) return TypedActionResult.success(itemStack);
-
-        TextboxScreenRoot root = new TextboxScreenRoot();
-
-        MinecraftClient.getInstance().openScreen(new TextboxScreen(root));
+        if (world.isClient) {
+            MinecraftClient.getInstance().openScreen(new TextboxScreen(new TextboxScreenRoot(hand)));
+        }
 
         return TypedActionResult.success(itemStack);
     }
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        CompoundTag stackTag = stack.getOrCreateTag();
-        TextboxScreenRoot root = new TextboxScreenRoot();
-        if(root.getURL() != null) {
-            stackTag.putString("URL", root.getURL().toString());
-        }
-        if (stackTag.contains("URL")) {
-            tooltip.add(new LiteralText("§2URL: ").append(new TranslatableText(stackTag.getCompound("ItemStuff").getString("URL")).formatted(Formatting.YELLOW)));
+        CompoundTag tag = stack.getOrCreateTag();
+        if(tag.contains("URL")) {
+            tooltip.add(new LiteralText("URL: ").formatted(Formatting.GREEN).append(new LiteralText(tag.getString("URL")).formatted(Formatting.YELLOW)));
         } else {
-            tooltip.add(new LiteralText("§7Blank"));
-
+            tooltip.add(new LiteralText("Empty"));
         }
     }
 }
