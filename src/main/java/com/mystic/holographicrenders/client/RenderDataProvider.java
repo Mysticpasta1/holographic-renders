@@ -490,8 +490,6 @@ public abstract class RenderDataProvider<T> {
             GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.getWidth(), image.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
 
             return textureID;
-            } else {
-                System.out.println("image is null");
             }
             return 0;
         }
@@ -499,9 +497,7 @@ public abstract class RenderDataProvider<T> {
         private static BufferedImage loadImage(String loc) {
             try {
                 return ImageIO.read(new URL(loc));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            } catch (IOException ignored) {}
             return null;
         }
 

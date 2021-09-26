@@ -31,7 +31,6 @@ import org.lwjgl.system.CallbackI;
 public class HolographicRenders implements ModInitializer {
 
     public static final String MOD_ID = "holographic_renders";
-    ProjectorBlockEntity be = new ProjectorBlockEntity();
 
     public static final ItemGroup HOLOGRAPHIC_RENDERS_CREATIVE_TAB = FabricItemGroupBuilder.create(new Identifier(MOD_ID, "general")).icon(() -> new ItemStack(HolographicRenders.PROJECTOR_BLOCK)).build().setName("holographic_renders:textures/gui/hologram_tab.png");
 

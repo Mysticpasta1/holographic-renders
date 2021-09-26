@@ -5,10 +5,16 @@ import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.client.gui.screen.pack.ResourcePackOrganizer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
@@ -22,6 +28,9 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.system.CallbackI;
+
+import java.util.Objects;
 
 public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory {
 
@@ -32,6 +41,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     private ItemStack stack = ItemStack.EMPTY;
     private float alpha = 1;
     private boolean lightEnabled = true;
+    private ItemStack itemStack = ItemStack.EMPTY;
 
     public ProjectorBlockEntity() {
         super(HolographicRenders.PROJECTOR_BLOCK_ENTITY);
@@ -43,10 +53,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     public void setItem(ItemStack stack) {
         this.stack = stack;
-
-        if (!world.isClient) {
-            markDirty();
-        }
+        markDirty();
     }
 
     public @NotNull RenderDataProvider<?> getRenderer() {
@@ -55,10 +62,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     public void setAlpha(float alpha) {
         this.alpha = alpha;
-
-        if(!world.isClient) {
-            this.markDirty();
-        }
+        this.markDirty();
     }
 
     public float getAlpha() {
@@ -67,10 +71,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     public void setLightEnabled(boolean shouldDrawLights) {
         this.lightEnabled = shouldDrawLights;
-
-        if(!world.isClient) {
-            this.markDirty();
-        }
+        this.markDirty();
     }
 
     public boolean lightsEnabled() {
@@ -97,8 +98,6 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
         }
     }
 
-
-
     @Override
     public CompoundTag toTag(CompoundTag tag) {
         tag.putFloat("Alpha", alpha);
@@ -121,9 +120,11 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public void markDirty() {
-        setRenderer(ItemProjectionHandler.getDataProvider(this, inventory.get(0)), false);
+        if(world.isClient) {
+            setRenderer(ItemProjectionHandler.getDataProvider(this, inventory.get(0)), false);
+        }
         super.markDirty();
-        if (!world.isClient()) {
+        if (!world.isClient) {
             sync();
         }
     }
