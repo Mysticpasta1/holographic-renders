@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.minecraft.block.Block;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.BlockItem;
@@ -71,6 +72,16 @@ public class HolographicRenders implements ModInitializer {
                     CompoundTag tag = stack.getOrCreateTag();
                     tag.putString("URL", url);
                     stack.toTag(tag);
+                }
+            });
+        });
+        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "light_packet"), (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            boolean lights = buf.readBoolean();
+            server.execute(() -> {
+                BlockEntity blockEntity = player.world.getBlockEntity(pos);
+                if(blockEntity instanceof ProjectorBlockEntity){
+                    ((ProjectorBlockEntity) blockEntity).setLightEnabled(lights);
                 }
             });
         });

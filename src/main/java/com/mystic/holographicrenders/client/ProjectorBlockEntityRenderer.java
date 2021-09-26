@@ -1,5 +1,6 @@
 package com.mystic.holographicrenders.client;
 
+import com.mystic.holographicrenders.blocks.projector.ItemProjectionHandler;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.minecraft.client.MinecraftClient;
@@ -106,7 +107,7 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             HologramRenderLayer.setAlpha(entity.getAlpha());
             matrices.push();
             try {
-                entity.getRenderer().render(matrices, immediate, tickDelta, light, overlay, entity);
+                ItemProjectionHandler.getDataProvider(entity, entity.getItem()).render(matrices, immediate, tickDelta, light, overlay, entity);
             } catch (MalformedURLException ignored) {
             }
             matrices.pop();

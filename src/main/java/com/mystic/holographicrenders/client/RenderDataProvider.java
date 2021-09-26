@@ -6,7 +6,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import com.mystic.holographicrenders.item.TextureScannerItem;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
@@ -23,7 +22,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
@@ -33,7 +31,6 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-import org.apache.commons.io.FileUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -41,17 +38,13 @@ import org.lwjgl.opengl.GL12;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @param <T>
@@ -456,11 +449,16 @@ public abstract class RenderDataProvider<T> {
             buffer.vertex(matrix, x2, offY, 1.0f).texture(1.0f, 0.0f).next();
         }
 
+        private static final Map<String, Integer> IMAGE_CACHE = new HashMap<>();
+
         public static int loadTexture(String loc) {
+            if (IMAGE_CACHE.containsKey(loc)) {
+                return IMAGE_CACHE.get(loc);
+            }
             GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
             GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
             BufferedImage image = loadImage(loc);
-            if(image != null) {
+            if (image != null) {
                 int[] pixels = new int[image.getWidth() * image.getHeight()];
                 image.getRGB(0, 0, image.getWidth(), image.getHeight(), pixels, 0, image.getWidth());
 
@@ -478,19 +476,21 @@ public abstract class RenderDataProvider<T> {
                 }
                 buffer.flip();
 
-            int textureID = GL11.glGenTextures(); //Generate texture ID
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureID); //Bind texture ID
+                int textureID = GL11.glGenTextures(); //Generate texture ID
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureID); //Bind texture ID
 
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
 
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.getWidth(), image.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.getWidth(), image.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
 
-            return textureID;
+                IMAGE_CACHE.put(loc, textureID);
+                return textureID;
             }
+            IMAGE_CACHE.put(loc, 0);
             return 0;
         }
 

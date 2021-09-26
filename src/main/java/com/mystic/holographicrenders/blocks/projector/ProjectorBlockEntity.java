@@ -1,20 +1,12 @@
 package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.client.RenderDataProvider;
-import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
-import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.gui.screen.pack.ResourcePackOrganizer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
@@ -25,39 +17,25 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
-import org.jetbrains.annotations.NotNull;
-import org.lwjgl.system.CallbackI;
-
-import java.util.Objects;
 
 public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory {
 
-    @NotNull
-    private RenderDataProvider<?> renderer = RenderDataProvider.EmptyProvider.INSTANCE;
-
-    DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
-    private ItemStack stack = ItemStack.EMPTY;
+    private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
     private float alpha = 1;
     private boolean lightEnabled = true;
-    private ItemStack itemStack = ItemStack.EMPTY;
 
     public ProjectorBlockEntity() {
         super(HolographicRenders.PROJECTOR_BLOCK_ENTITY);
     }
 
     public ItemStack getItem() {
-        return stack;
+        return inventory.get(0);
     }
 
     public void setItem(ItemStack stack) {
-        this.stack = stack;
+        inventory.set(0, stack);
         markDirty();
-    }
-
-    public @NotNull RenderDataProvider<?> getRenderer() {
-        return renderer;
     }
 
     public void setAlpha(float alpha) {
@@ -83,28 +61,14 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
         super.fromTag(state, tag);
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
-        stack = ItemStack.fromTag(tag.getCompound("Stack"));
-        Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
-        renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
-        renderer.fromTag(tag, this);
-
-        Inventories.fromTag(tag, inventory);
-    }
-
-    public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
-        this.renderer = renderer;
-        if (sync) {
-            this.markDirty();
-        }
+        inventory.set(0, ItemStack.fromTag(tag.getCompound("Stack")));
     }
 
     @Override
     public CompoundTag toTag(CompoundTag tag) {
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
-        tag.put("Stack", stack.toTag(new CompoundTag()));
-        renderer.toTag(tag, this);
-        Inventories.toTag(tag, inventory);
+        tag.put("Stack", getItem().toTag(new CompoundTag()));
         return super.toTag(tag);
     }
 
@@ -116,17 +80,6 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     @Override
     public Text getDisplayName() {
         return new TranslatableText(getCachedState().getBlock().getTranslationKey());
-    }
-
-    @Override
-    public void markDirty() {
-        if(world.isClient) {
-            setRenderer(ItemProjectionHandler.getDataProvider(this, inventory.get(0)), false);
-        }
-        super.markDirty();
-        if (!world.isClient) {
-            sync();
-        }
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -16,6 +17,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerListener;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
 
@@ -54,7 +56,10 @@ public class ProjectorScreenHandler extends ScreenHandler {
 
     public void setLight(boolean lights) {
         if (blockEntity.getWorld().isClient) {
-            // TODO: Sync it
+            PacketByteBuf buf = PacketByteBufs.create();
+            buf.writeBlockPos(blockEntity.getPos());
+            buf.writeBoolean(lights);
+            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "light_packet"), buf);
         } else {
             blockEntity.setLightEnabled(lights);
         }
