@@ -36,6 +36,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
 import javax.imageio.ImageIO;
+import javax.net.ssl.HttpsURLConnection;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -431,11 +432,8 @@ public abstract class RenderDataProvider<T> {
             bufferBuilder.begin(7, vertexFormat);
             DrawQuad(data, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
             bufferBuilder.end();
-            RenderSystem.enableAlphaTest();
             RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
-            RenderSystem.disableAlphaTest();
-            RenderSystem.disableDepthTest();
             matrices.pop();
         }
 
@@ -486,7 +484,6 @@ public abstract class RenderDataProvider<T> {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.getWidth(), image.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-
                 IMAGE_CACHE.put(loc, textureID);
                 return textureID;
             }
@@ -494,49 +491,19 @@ public abstract class RenderDataProvider<T> {
             return 0;
         }
 
+
         private static BufferedImage loadImage(String loc) {
             try {
-                return ImageIO.read(new URL(loc));
+                URL url = new URL(loc);
+                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+                if (conn.getContentType().contains("png") || conn.getContentType().contains("jpeg")
+                        || conn.getContentType().contains("tiff") || conn.getContentType().contains("bmp")) {
+                    return ImageIO.read(url);
+                }
+                conn.disconnect();
             } catch (IOException ignored) {}
             return null;
         }
-
-       /* public void createFileAndLoad(){
-            new TextureScannerItem();
-            try {
-                ArrayList<String> URLArray = new ArrayList<>();
-                String dir = "hologramimages" + "/hologramimages/";
-                File folder = new File(dir);
-                if (folder.mkdirs()) {
-                    System.out.println("Directory is created!");
-                } else {
-                    System.out.println("Failed to create directory! or Directory is already created!");
-                }
-                for(int i = 0; i < 1; i ++) {
-                    URL url = new TextboxScreenRoot().getURL();
-                    if(url != null) {
-                        File file =new File("hologramimages" + "/hologramimages/" + url.getFile().toLowerCase(Locale.ROOT) + ".png");
-                        if(!file.exists()) {
-                            URLArray.add(url.toString());
-                            for (String s : URLArray) {
-                                final Pattern pattern = Pattern.compile("[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]+.[a-zA-Z]", Pattern.CASE_INSENSITIVE);
-                                final Matcher matcher = pattern.matcher(s);
-                                if (!matcher.matches()) {
-                                    FileUtils.copyURLToFile(new URL(s), file);
-                                    System.out.println("image downloaded");
-                                }
-                            }
-                        } else {
-                            System.out.println("File already exists in the folder");
-                        }
-                    }
-                }
-            } catch (MalformedURLException e) {
-                System.out.println("no URL found or null url");
-            } catch (IOException e) {
-                System.out.println("file not found or Failed to create directory!" + e.getMessage());
-            }
-        }*/
 
         @Override
         protected CompoundTag write(ProjectorBlockEntity be) {
