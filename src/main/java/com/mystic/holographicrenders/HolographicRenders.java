@@ -19,6 +19,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
@@ -46,9 +47,8 @@ public class HolographicRenders implements ModInitializer {
     public static final Identifier TEXTBOX_ID = new Identifier(MOD_ID, "textbox");
     public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER;
 
-
     static {
-        PROJECTOR_SCREEN_HANDLER = ScreenHandlerRegistry.registerSimple(PROJECTOR_ID, ProjectorScreenHandler::new);
+        PROJECTOR_SCREEN_HANDLER = ScreenHandlerRegistry.registerExtended(PROJECTOR_ID, ProjectorScreenHandler::new);
     }
 
     @Override
@@ -69,7 +69,9 @@ public class HolographicRenders implements ModInitializer {
             server.execute(() -> {
                 ItemStack stack = player.getStackInHand(hand);
                 if(stack.getItem() instanceof TextureScannerItem) {
-                    stack.getOrCreateTag().putString("URL", url);
+                    CompoundTag tag = stack.getOrCreateTag();
+                    tag.putString("URL", url);
+                    stack.toTag(tag);
                 }
             });
         });

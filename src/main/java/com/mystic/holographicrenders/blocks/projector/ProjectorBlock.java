@@ -1,13 +1,15 @@
 package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.network.ProjectorScreenPacket;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.screen.NamedScreenHandlerFactory;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
@@ -153,7 +155,7 @@ public class ProjectorBlock extends BlockWithEntity {
 
         if (world.isClient) return ActionResult.SUCCESS;
 
-        NamedScreenHandlerFactory screenHandlerFactory = state.createScreenHandlerFactory(world, pos);
+        ExtendedScreenHandlerFactory screenHandlerFactory = (ExtendedScreenHandlerFactory) state.createScreenHandlerFactory(world, pos);
         ProjectorBlockEntity be = (ProjectorBlockEntity) screenHandlerFactory;
 
         if (screenHandlerFactory != null) {

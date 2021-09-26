@@ -14,7 +14,6 @@ import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Matrix4f;
 
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,17 +104,18 @@ public class ProjectorBlockEntityRenderer extends BlockEntityRenderer<ProjectorB
             matrices.pop();
         }
 
-        if (entity.getAlpha() != 0 || true) {
+        if (entity.getAlpha() != 0) {
             HologramRenderLayer.setAlpha(entity.getAlpha());
-
             matrices.push();
-            providers.computeIfAbsent(entity.getUrl(), RenderDataProvider.TextureProvider::of).render(matrices, immediate, tickDelta, light, overlay, entity);
+
+            providers.compute(getRender(matrices, immediate, tickDelta, light, overlay, entity);
+
+            immediate.draw();
+            matrices.pop();
         }
-
         matrices.pop();
-
-        immediate.draw();
     }
+
 
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {
         buffer.vertex(matrix, x, y, z).color(r, g, b, a).next();

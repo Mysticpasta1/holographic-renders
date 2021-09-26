@@ -436,7 +436,6 @@ public abstract class RenderDataProvider<T> {
             VertexFormat vertexFormat = textureRenderLayer.getVertexFormat();
             BufferBuilder bufferBuilder = new BufferBuilder(5);
             bufferBuilder.begin(7, vertexFormat);
-            System.out.println(data);
             DrawQuad(data, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
             bufferBuilder.end();
             RenderSystem.enableAlphaTest();
