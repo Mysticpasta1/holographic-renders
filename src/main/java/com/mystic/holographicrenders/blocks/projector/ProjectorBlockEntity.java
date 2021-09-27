@@ -98,15 +98,6 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public void markDirty() {
-        if(!world.isClient) {
-            setRenderer(ItemProjectionHandler.getDataProvider(this, this.getItem()), false);
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeItemStack(this.getItem());
-            buf.writeBlockPos(this.getPos());
-            for(ServerPlayerEntity player : world.getServer().getPlayerManager().getPlayerList()) {
-                ServerPlayNetworking.send(player, new Identifier(HolographicRenders.MOD_ID, "render_packet"), buf);
-            }
-        }
         super.markDirty();
         if (!world.isClient) {
             sync();

@@ -434,6 +434,7 @@ public abstract class RenderDataProvider<T> {
             bufferBuilder.end();
             RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
+            RenderSystem.disableDepthTest();
             matrices.pop();
         }
 
