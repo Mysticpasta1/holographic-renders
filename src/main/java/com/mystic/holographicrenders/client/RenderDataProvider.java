@@ -2,6 +2,10 @@ package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
 import com.glisco.worldmesher.internals.WorldMesher;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
@@ -25,13 +29,14 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -46,6 +51,9 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -75,7 +83,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(ItemProvider.ID, () -> new ItemProvider(ItemStack.EMPTY));
         RenderDataProviderRegistry.register(BlockProvider.ID, () -> new BlockProvider(Blocks.AIR.getDefaultState()));
         RenderDataProviderRegistry.register(EntityProvider.ID, () -> new EntityProvider(null));
-        RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(new Pair<>(BlockPos.ORIGIN, BlockPos.ORIGIN)));
+        RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(Pair.of(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
         RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(0));
@@ -308,6 +316,15 @@ public abstract class RenderDataProvider<T> {
     }
 
     public static class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
+        private static LoadingCache<Pair<BlockPos, BlockPos>, AreaProvider> cache = CacheBuilder.newBuilder()
+                .maximumSize(20)
+                .expireAfterAccess(20, TimeUnit.SECONDS)
+                .build(new CacheLoader<org.apache.commons.lang3.tuple.Pair<BlockPos, BlockPos>, AreaProvider>() {
+                    @Override
+                    public AreaProvider load(Pair<BlockPos, BlockPos> key) {
+                        return new AreaProvider(key);
+                    }
+                });
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
 
@@ -323,8 +340,8 @@ public abstract class RenderDataProvider<T> {
             invalidateCache();
         }
 
-        public static AreaProvider from(BlockPos start, BlockPos end) {
-            return new AreaProvider(new Pair<>(start, end));
+        public static AreaProvider from(BlockPos start, BlockPos end) throws ExecutionException {
+            return cache.get(Pair.of(start, end));
         }
 
         @Override
@@ -385,7 +402,7 @@ public abstract class RenderDataProvider<T> {
             BlockPos end = BlockPos.fromLong(tag.getLong("End"));
 
             if (!(start.equals(data.getLeft()) && end.equals(data.getRight()))) {
-                this.data = new Pair<>(start, end);
+                this.data = Pair.of(start, end);
                 invalidateCache();
             }
         }

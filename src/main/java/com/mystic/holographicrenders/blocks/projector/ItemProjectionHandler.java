@@ -13,6 +13,7 @@ import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 
 public class ItemProjectionHandler {
@@ -35,10 +36,15 @@ public class ItemProjectionHandler {
             if (tag.contains("Pos1") && tag.contains("Pos2")) {
                 BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
                 BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));
-                return RenderDataProvider.AreaProvider.from(pos1, pos2);
-            } else {
-                return RenderDataProvider.EmptyProvider.INSTANCE;
+                try {
+                    return RenderDataProvider.AreaProvider.from(pos1, pos2);
+                } catch (ExecutionException ignored) {
+                    return RenderDataProvider.EmptyProvider.INSTANCE;
+                }
             }
+
+            return RenderDataProvider.EmptyProvider.INSTANCE;
+
         });
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(be.getStack(0).getOrCreateTag().getString("URL")));
