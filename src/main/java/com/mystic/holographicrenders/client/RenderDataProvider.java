@@ -1,6 +1,7 @@
 package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
+import com.glisco.worldmesher.internals.WorldMesher;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
@@ -311,14 +312,13 @@ public abstract class RenderDataProvider<T> {
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
 
         private final MinecraftClient client;
-
-        private WorldMesh mesh;
         private long lastUpdateTick;
+        private WorldMesh mesh;
 
         protected AreaProvider(Pair<BlockPos, BlockPos> data) {
             super(data);
             this.client = MinecraftClient.getInstance();
-            //TODO fix this arrgh
+            //TODO fix this argh
             this.lastUpdateTick = this.client.world.getTime();
             invalidateCache();
         }
@@ -434,7 +434,6 @@ public abstract class RenderDataProvider<T> {
             bufferBuilder.end();
             RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
-            RenderSystem.disableDepthTest();
             matrices.pop();
         }
 
