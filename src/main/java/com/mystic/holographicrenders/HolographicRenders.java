@@ -1,5 +1,6 @@
 package com.mystic.holographicrenders;
 
+import com.mystic.holographicrenders.blocks.projector.ItemProjectionHandler;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
@@ -26,8 +27,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.World;
-import org.lwjgl.system.CallbackI;
 
 public class HolographicRenders implements ModInitializer {
 
@@ -82,6 +81,16 @@ public class HolographicRenders implements ModInitializer {
                 BlockEntity blockEntity = player.world.getBlockEntity(pos);
                 if(blockEntity instanceof ProjectorBlockEntity){
                     ((ProjectorBlockEntity) blockEntity).setLightEnabled(lights);
+                }
+            });
+        });
+        ClientPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "render_packet"), (client, handler, buf, responseSender) -> {
+            ItemStack stack = buf.readItemStack();
+            BlockPos pos = buf.readBlockPos();
+            client.execute(() -> {
+                BlockEntity blockEntity = MinecraftClient.getInstance().world.getBlockEntity(pos);
+                if(blockEntity instanceof ProjectorBlockEntity){
+                    ((ProjectorBlockEntity) blockEntity).setRenderer(ItemProjectionHandler.getDataProvider((ProjectorBlockEntity) blockEntity, stack), false);
                 }
             });
         });

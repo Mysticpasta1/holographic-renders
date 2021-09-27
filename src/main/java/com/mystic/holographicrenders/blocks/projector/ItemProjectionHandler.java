@@ -21,16 +21,12 @@ public class ItemProjectionHandler {
 
     static {
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
-            final BlockPos pos = be.getPos();
-
             if (!stack.getOrCreateTag().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
-
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
             if (type == null) return RenderDataProvider.EmptyProvider.INSTANCE;
             Entity entity = type.create(be.getWorld());
             entity.fromTag(stack.getOrCreateTag().getCompound("Entity"));
-            entity.updatePosition(pos.getX(), pos.getY(), pos.getZ());
-
+            entity.updatePosition(be.getPos().getX(), be.getPos().getY(), be.getPos().getZ());
             return RenderDataProvider.EntityProvider.from(entity);
         });
 

@@ -1,13 +1,18 @@
 package com.mystic.holographicrenders.item;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.client.item.TooltipContext;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -46,13 +51,15 @@ public class EntityScannerItem extends Item {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         final ItemStack stack = user.getStackInHand(hand);
-        if(!user.isSneaking()) return TypedActionResult.pass(stack);
-
-        if(!stack.getOrCreateTag().contains("Entity")) return TypedActionResult.pass(stack);
-        stack.getOrCreateTag().remove("Entity");
-
+        if (user.isSneaking()) {
+            if (stack.getOrCreateTag().contains("Entity")) {
+                stack.getOrCreateTag().remove("Entity");
+                return TypedActionResult.success(stack);
+            }
+        }
         return TypedActionResult.success(stack);
     }
+
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
