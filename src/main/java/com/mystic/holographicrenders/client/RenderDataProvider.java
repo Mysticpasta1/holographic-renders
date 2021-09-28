@@ -1,14 +1,10 @@
 package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
-import com.glisco.worldmesher.internals.WorldMesher;
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
@@ -19,7 +15,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.realms.gui.screen.RealmsMainScreen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
@@ -41,26 +36,18 @@ import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
-import com.sun.jna.platform.unix.solaris.LibKstat;
 import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
-import java.awt.*;
+
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -432,9 +419,7 @@ public abstract class RenderDataProvider<T> {
                     @Override
                     public TextureProvider load(String key) {
                         NativeImage image = loadImage(key);
-
                         Identifier id = new Identifier(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
-
                         MinecraftClient.getInstance().getTextureManager().registerTexture(id, new NativeImageBackedTexture(image));
 
                         return new TextureProvider(id);
@@ -466,21 +451,18 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(-7.5, 0, 0);
 
-            Identifier identifierTexture = new Identifier(HolographicRenders.MOD_ID, "yeet.png");
-            TextureRenderLayer textureRenderLayer = new TextureRenderLayer(RenderLayer.getText(identifierTexture));
-
-            VertexFormat vertexFormat = textureRenderLayer.getVertexFormat();
-            BufferBuilder bufferBuilder = new BufferBuilder(5);
-            bufferBuilder.begin(VertexFormat.DrawMode.QUADS, vertexFormat);
-            DrawQuad(data, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
+            BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
+            RenderSystem.setShaderTexture(0, data);
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
+            drawQuad(0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
             bufferBuilder.end();
             RenderSystem.enableDepthTest();
             BufferRenderer.draw(bufferBuilder);
             matrices.pop();
         }
 
-        public void DrawQuad(Identifier texture, float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
-            MinecraftClient.getInstance().getTextureManager().bindTexture(texture);
+        public void drawQuad(float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
             Matrix4f matrix = stack.peek().getModel();
             float x2 = offX + width, y2 = offY + height;
             buffer.vertex(matrix, offX, offY, 1.0f).texture(0.0f, 0.0f).next();
@@ -493,20 +475,12 @@ public abstract class RenderDataProvider<T> {
             try {
                 URL url = new URL(loc);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                if (conn.getContentType().contains("png") || conn.getContentType().contains("jpeg")
-                        || conn.getContentType().contains("tiff") || conn.getContentType().contains("bmp")) {
-                    return getFromBuffered(ImageIO.read(url));
+                if (conn.getContentType().contains("png") ) {
+                    return NativeImage.read(conn.getInputStream());
                 }
                 conn.disconnect();
             } catch (IOException ignored) {}
             return null;
-        }
-
-        private static NativeImage getFromBuffered(BufferedImage image) throws IOException {
-            try (FastByteArrayOutputStream outputStream = new FastByteArrayOutputStream()) {
-                ImageIO.write(image, "PNG", outputStream);
-                return NativeImage.read(new FastByteArrayInputStream(outputStream.array));
-            }
         }
 
         @Override
