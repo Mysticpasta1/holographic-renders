@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern":
+  [
+    "  I",
+    " RL",
+    " II"
+  ],
+  "key":
+  {
+    "R":
+    {
+      "item": "minecraft:redstone"
+    },
+
+    "L":
+    {
+      "item": "minecraft:lime_stained_glass_pane"
+    },
+
+    "I":
+    {
+      "item": "minecraft:iron_nugget"
+    }
+
+  },
+  "result":
+  {
+    "item": "holographic_renders:entity_scanner",
+    "count": 1
+  }
+}

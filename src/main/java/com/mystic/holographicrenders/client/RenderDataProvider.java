@@ -1,8 +1,6 @@
 package com.mystic.holographicrenders.client;
 
 import com.glisco.worldmesher.WorldMesh;
-import com.glisco.worldmesher.internals.WorldMesher;
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -21,21 +19,16 @@ import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Matrix4f;
+import net.minecraft.util.math.*;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -51,7 +44,6 @@ import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -70,12 +62,12 @@ public abstract class RenderDataProvider<T> {
     @Environment(EnvType.CLIENT)
     public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException;
 
-    public void toTag(CompoundTag tag, ProjectorBlockEntity be) {
+    public void toNbt(NbtCompound tag, ProjectorBlockEntity be) {
         tag.putString("RendererType", getTypeId().toString());
         tag.put("RenderData", write(be));
     }
 
-    public void fromTag(CompoundTag tag, ProjectorBlockEntity be) {
+    public void fromNbt(NbtCompound tag, ProjectorBlockEntity be) {
         read(tag.getCompound("RenderData"), be);
     }
 
@@ -89,9 +81,9 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(0));
     }
 
-    protected abstract CompoundTag write(ProjectorBlockEntity be);
+    protected abstract NbtCompound write(ProjectorBlockEntity be);
 
-    protected abstract void read(CompoundTag tag, ProjectorBlockEntity be);
+    protected abstract void read(NbtCompound tag, ProjectorBlockEntity be);
 
     public abstract Identifier getTypeId();
 
@@ -113,24 +105,24 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
             //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
             MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformation.Mode.GROUND, light, overlay, matrices, immediate);
 
         }
 
         @Override
-        public CompoundTag write(ProjectorBlockEntity be) {
-            CompoundTag tag = new CompoundTag();
-            CompoundTag itemTag = new CompoundTag();
-            data.toTag(itemTag);
+        public NbtCompound write(ProjectorBlockEntity be) {
+            NbtCompound tag = new NbtCompound();
+            NbtCompound itemTag = new NbtCompound();
+            data.writeNbt(itemTag);
             tag.put("Item", itemTag);
             return tag;
         }
 
         @Override
-        public void read(CompoundTag tag, ProjectorBlockEntity be) {
-            data = ItemStack.fromTag(tag.getCompound("Item"));
+        public void read(NbtCompound tag, ProjectorBlockEntity be) {
+            data = ItemStack.fromNbt(tag.getCompound("Item"));
         }
 
         @Override
@@ -158,7 +150,7 @@ public abstract class RenderDataProvider<T> {
             matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
             matrices.translate(-0.5, 0, -0.5);
 
@@ -166,14 +158,14 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public CompoundTag write(ProjectorBlockEntity be) {
-            final CompoundTag tag = new CompoundTag();
+        public NbtCompound write(ProjectorBlockEntity be) {
+            final NbtCompound tag = new NbtCompound();
             tag.putString("BlockId", Registry.BLOCK.getId(data.getBlock()).toString());
             return tag;
         }
 
         @Override
-        public void read(CompoundTag tag, ProjectorBlockEntity be) {
+        public void read(NbtCompound tag, ProjectorBlockEntity be) {
             data = Registry.BLOCK.getOrEmpty(Identifier.tryParse(tag.getString("BlockId"))).orElse(Blocks.AIR).getDefaultState();
         }
 
@@ -186,13 +178,13 @@ public abstract class RenderDataProvider<T> {
     public static class EntityProvider extends RenderDataProvider<Entity> {
 
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "entity");
-        private CompoundTag entityTag = null;
+        private NbtCompound entityTag = null;
 
         protected EntityProvider(Entity data) {
             super(data);
             if (data == null) return;
-            entityTag = new CompoundTag();
-            data.saveSelfToTag(entityTag);
+            entityTag = new NbtCompound();
+            data.saveSelfNbt(entityTag);
         }
 
         public static EntityProvider from(Entity entity) {
@@ -206,7 +198,7 @@ public abstract class RenderDataProvider<T> {
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
 
             matrices.translate(0.5, 0.75, 0.5);
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
             final EntityRenderDispatcher entityRenderDispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
@@ -223,14 +215,14 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public CompoundTag write(ProjectorBlockEntity be) {
-            CompoundTag tag = new CompoundTag();
+        public NbtCompound write(ProjectorBlockEntity be) {
+            NbtCompound tag = new NbtCompound();
             tag.put("Entity", entityTag);
             return tag;
         }
 
         @Override
-        public void read(CompoundTag tag, ProjectorBlockEntity be) {
+        public void read(NbtCompound tag, ProjectorBlockEntity be) {
             entityTag = tag.getCompound("Entity");
             data = null;
         }
@@ -287,8 +279,8 @@ public abstract class RenderDataProvider<T> {
                 rot *= facing == Direction.UP ? -1 : 1;
                 rot *= facing.getAxis() == Direction.Axis.Z ? facing.getOffsetZ() : 1;
                 rot *= facing.getAxis() == Direction.Axis.X ? facing.getOffsetX() : 1;
-                matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(rot));
-                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(90 * (facing == Direction.EAST ? -1 : 1)));
+                matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(rot));
+                matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90 * (facing == Direction.EAST ? -1 : 1)));
             }
 
             matrices.scale(0.05f, -0.05f, 0.05f); //TODO make this usable with scaling sliders
@@ -298,14 +290,14 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        protected CompoundTag write(ProjectorBlockEntity be) {
-            CompoundTag compoundTag = new CompoundTag();
+        protected NbtCompound write(ProjectorBlockEntity be) {
+            NbtCompound compoundTag = new NbtCompound();
             compoundTag.putString("Text", Text.Serializer.toJson(data));
             return compoundTag;
         }
 
         @Override
-        protected void read(CompoundTag tag, ProjectorBlockEntity be) {
+        protected void read(NbtCompound tag, ProjectorBlockEntity be) {
             data = Text.Serializer.fromJson(tag.getString("Text"));
         }
 
@@ -361,7 +353,7 @@ public abstract class RenderDataProvider<T> {
                 TextProvider.drawText(matrices, be, 0, Text.of("§b[§aScanning§b]"));
             } else {
                 matrices.translate(0.5, 0.5, 0.5);
-                matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+                matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
                 matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
 
                 int xSize = 1 + Math.max(data.getLeft().getX(), data.getRight().getX()) - Math.min(data.getLeft().getX(), data.getRight().getX());
@@ -387,8 +379,8 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public CompoundTag write(ProjectorBlockEntity be) {
-            final CompoundTag tag = new CompoundTag();
+        public NbtCompound write(ProjectorBlockEntity be) {
+            final NbtCompound tag = new NbtCompound();
 
             tag.putLong("Start", data.getLeft().asLong());
             tag.putLong("End", data.getRight().asLong());
@@ -397,7 +389,7 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        public void read(CompoundTag tag, ProjectorBlockEntity be) {
+        public void read(NbtCompound tag, ProjectorBlockEntity be) {
             BlockPos start = BlockPos.fromLong(tag.getLong("Start"));
             BlockPos end = BlockPos.fromLong(tag.getLong("End"));
 
@@ -436,8 +428,8 @@ public abstract class RenderDataProvider<T> {
             double z = player.getZ() - be.getPos().getZ() - 0.5;
             float rot = (float) MathHelper.atan2(z, x);
 
-            matrices.multiply(Vector3f.POSITIVE_Y.getRadialQuaternion(-rot));
-            matrices.multiply(Vector3f.POSITIVE_Y.getDegreesQuaternion(90));
+            matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
+            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90));
 
             matrices.translate(-7.5, 0, 0);
 
@@ -523,14 +515,14 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        protected CompoundTag write(ProjectorBlockEntity be) {
-            final CompoundTag tag = new CompoundTag();
+        protected NbtCompound write(ProjectorBlockEntity be) {
+            final NbtCompound tag = new NbtCompound();
             tag.putInt("Texture", data);
             return tag;
         }
 
         @Override
-        protected void read(CompoundTag tag, ProjectorBlockEntity be) {
+        protected void read(NbtCompound tag, ProjectorBlockEntity be) {
             this.data = tag.getInt("Texture");
         }
 
@@ -557,12 +549,12 @@ public abstract class RenderDataProvider<T> {
         }
 
         @Override
-        protected CompoundTag write(ProjectorBlockEntity be) {
-            return new CompoundTag();
+        protected NbtCompound write(ProjectorBlockEntity be) {
+            return new NbtCompound();
         }
 
         @Override
-        protected void read(CompoundTag tag, ProjectorBlockEntity be) {
+        protected void read(NbtCompound tag, ProjectorBlockEntity be) {
 
         }
 

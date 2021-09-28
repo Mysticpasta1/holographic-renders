@@ -1,0 +1,42 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern":
+  [
+    "RGR",
+    "GBG",
+    "SOS"
+  ],
+  "key":
+  {
+    "R":
+    {
+      "item": "minecraft:redstone"
+    },
+
+    "G":
+    {
+      "item": "minecraft:glass"
+    },
+
+    "B":
+    {
+      "item": "minecraft:blaze_rod"
+    },
+
+    "S":
+    {
+      "item": "minecraft:stone"
+    },
+
+    "O":
+    {
+      "item": "minecraft:obsidian"
+    }
+
+  },
+  "result":
+  {
+    "item": "holographic_renders:projector",
+    "count": 1
+  }
+}

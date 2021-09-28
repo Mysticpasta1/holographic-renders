@@ -8,7 +8,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.HashMap;
@@ -26,13 +26,13 @@ public class ItemProjectionHandler {
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
             if (type == null) return RenderDataProvider.EmptyProvider.INSTANCE;
             Entity entity = type.create(be.getWorld());
-            entity.fromTag(stack.getOrCreateTag().getCompound("Entity"));
+            entity.writeNbt(stack.getOrCreateTag().getCompound("Entity"));
             entity.updatePosition(be.getPos().getX(), be.getPos().getY(), be.getPos().getZ());
             return RenderDataProvider.EntityProvider.from(entity);
         });
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.AREA_SCANNER, (be, stack) -> {
-            CompoundTag tag = stack.getOrCreateTag();
+            NbtCompound tag = stack.getOrCreateTag();
             if (tag.contains("Pos1") && tag.contains("Pos2")) {
                 BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
                 BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));

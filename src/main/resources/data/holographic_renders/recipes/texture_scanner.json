@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern":
+  [
+    "  I",
+    " GL",
+    " II"
+  ],
+  "key":
+  {
+    "G":
+    {
+      "item": "minecraft:glowstone_dust"
+    },
+
+    "L":
+    {
+      "item": "minecraft:lime_stained_glass_pane"
+    },
+
+    "I":
+    {
+      "item": "minecraft:iron_nugget"
+    }
+
+  },
+  "result":
+  {
+    "item": "holographic_renders:texture_scanner",
+    "count": 1
+  }
+}

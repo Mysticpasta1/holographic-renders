@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern":
+  [
+    "  I",
+    " DL",
+    " II"
+  ],
+  "key":
+  {
+    "D":
+    {
+      "item": "minecraft:diamond"
+    },
+
+    "L":
+    {
+      "item": "minecraft:lime_stained_glass_pane"
+    },
+
+    "I":
+    {
+      "item": "minecraft:iron_nugget"
+    }
+
+  },
+  "result":
+  {
+    "item": "holographic_renders:area_scanner",
+    "count": 1
+  }
+}

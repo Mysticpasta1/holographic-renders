@@ -5,7 +5,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -26,7 +26,7 @@ public class WorldRendererMixin {
         final ClientPlayerEntity player = client.player;
         if (player.getMainHandStack().getItem() != HolographicRenders.AREA_SCANNER) return;
 
-        CompoundTag tag = player.getMainHandStack().getOrCreateTag();
+        NbtCompound tag = player.getMainHandStack().getOrCreateTag();
 
         if (!tag.contains("Pos1")) return;
 

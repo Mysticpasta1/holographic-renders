@@ -63,7 +63,7 @@ public class TextureRenderLayer extends RenderLayer {
 
     @Override
     public VertexFormat getVertexFormat() {
-        return new VertexFormat(ImmutableList.<VertexFormatElement>builder().add(POSITION_ELEMENT).add(TEXTURE_ELEMENT).build());
+        return new VertexFormat(ImmutableList.<VertexFormatElement>builder().add(POSITION_ELEMENT).add(TEXTURE_0_ELEMENT).build());
     }
 
     public static class HologramVertexConsumerProvider extends VertexConsumerProvider.Immediate {

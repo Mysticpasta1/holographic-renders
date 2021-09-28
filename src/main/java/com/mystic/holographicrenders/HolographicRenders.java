@@ -21,7 +21,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
@@ -68,9 +68,9 @@ public class HolographicRenders implements ModInitializer {
             server.execute(() -> {
                 ItemStack stack = player.getStackInHand(hand);
                 if(stack.getItem() instanceof TextureScannerItem) {
-                    CompoundTag tag = stack.getOrCreateTag();
+                    NbtCompound tag = stack.getOrCreateTag();
                     tag.putString("URL", url);
-                    stack.toTag(tag);
+                    stack.writeNbt(tag);
                 }
             });
         });
