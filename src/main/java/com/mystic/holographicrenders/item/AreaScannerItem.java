@@ -27,7 +27,7 @@ public class AreaScannerItem extends Item {
     @Override
     public ActionResult useOnBlock(ItemUsageContext context) {
         ItemStack itemstack = context.getStack();
-        NbtCompound tag = itemstack.getOrCreateTag();
+        NbtCompound tag = itemstack.getOrCreateNbt();
 
         if (tag.contains("Pos2")) {
             return ActionResult.PASS;
@@ -46,7 +46,7 @@ public class AreaScannerItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
 
         ItemStack itemstack = player.getStackInHand(hand);
-        NbtCompound tag = itemstack.getOrCreateTag();
+        NbtCompound tag = itemstack.getOrCreateNbt();
 
         if (!player.isSneaking()) return TypedActionResult.pass(itemstack);
 
@@ -61,7 +61,7 @@ public class AreaScannerItem extends Item {
 
         List<Text> newLines = new ArrayList<>();
 
-        NbtCompound tag = stack.getOrCreateTag();
+        NbtCompound tag = stack.getOrCreateNbt();
 
         if (tag.contains("Pos1")) {
             BlockPos pos = BlockPos.fromLong(tag.getLong("Pos1"));

@@ -22,17 +22,17 @@ public class ItemProjectionHandler {
 
     static {
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
-            if (!stack.getOrCreateTag().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
+            if (!stack.getOrCreateNbt().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
             if (type == null) return RenderDataProvider.EmptyProvider.INSTANCE;
             Entity entity = type.create(be.getWorld());
-            entity.writeNbt(stack.getOrCreateTag().getCompound("Entity"));
+            entity.readNbt(stack.getOrCreateNbt().getCompound("Entity"));
             entity.updatePosition(be.getPos().getX(), be.getPos().getY(), be.getPos().getZ());
             return RenderDataProvider.EntityProvider.from(entity);
         });
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.AREA_SCANNER, (be, stack) -> {
-            NbtCompound tag = stack.getOrCreateTag();
+            NbtCompound tag = stack.getOrCreateNbt();
             if (tag.contains("Pos1") && tag.contains("Pos2")) {
                 BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
                 BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));
@@ -47,7 +47,13 @@ public class ItemProjectionHandler {
 
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(be.getStack(0).getOrCreateTag().getString("URL")));
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> {
+            try {
+                return RenderDataProvider.TextureProvider.of(be.getStack(0).getOrCreateNbt().getString("URL"));
+            } catch (ExecutionException e) {
+                return RenderDataProvider.EmptyProvider.INSTANCE;
+            }
+        });
 
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 

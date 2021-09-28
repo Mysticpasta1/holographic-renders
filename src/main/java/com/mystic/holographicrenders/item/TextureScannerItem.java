@@ -31,7 +31,7 @@ public class TextureScannerItem extends Item {
         ItemStack itemStack = player.getStackInHand(hand);
 
         if (world.isClient) {
-            MinecraftClient.getInstance().openScreen(new TextboxScreen(new TextboxScreenRoot(hand)));
+            MinecraftClient.getInstance().setScreen(new TextboxScreen(new TextboxScreenRoot(hand)));
         }
 
         return TypedActionResult.success(itemStack);
@@ -39,7 +39,7 @@ public class TextureScannerItem extends Item {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        NbtCompound tag = stack.getOrCreateTag();
+        NbtCompound tag = stack.getOrCreateNbt();
         if(tag.contains("URL")) {
             tooltip.add(new LiteralText("URL: ").formatted(Formatting.GREEN).append(new LiteralText(tag.getString("URL")).formatted(Formatting.YELLOW)));
         } else {

@@ -24,7 +24,7 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
 
     @Override
     protected void drawBackground(MatrixStack matrices, float delta, int mouseX, int mouseY) {
-        RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         client.getTextureManager().bindTexture(TEXTURE);
         int x = (width - backgroundWidth) / 2;
         int y = (height - backgroundHeight) / 2;
@@ -50,7 +50,7 @@ public class ProjectorScreen extends HandledScreen<ScreenHandler> {
         CheckboxWidget lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Text.of("Light"), lightsEnabled, aBoolean -> {
             client.getNetworkHandler().sendPacket(ProjectorScreenPacket.createLightAction(aBoolean));
         });
-        addButton(lightCheckbox);
+        addDrawable(lightCheckbox);
 
     }
 

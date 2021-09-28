@@ -4,6 +4,8 @@ import com.glisco.worldmesher.WorldMesh;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.cache.RemovalListener;
+import com.google.common.cache.RemovalNotification;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
@@ -15,9 +17,12 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.realms.gui.screen.RealmsMainScreen;
 import net.minecraft.client.render.*;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -26,9 +31,18 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Matrix4f;
+import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+
+import com.sun.jna.platform.unix.solaris.LibKstat;
+import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
+import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -62,12 +76,12 @@ public abstract class RenderDataProvider<T> {
     @Environment(EnvType.CLIENT)
     public abstract void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException;
 
-    public void toNbt(NbtCompound tag, ProjectorBlockEntity be) {
+    public void toTag(NbtCompound tag, ProjectorBlockEntity be) {
         tag.putString("RendererType", getTypeId().toString());
         tag.put("RenderData", write(be));
     }
 
-    public void fromNbt(NbtCompound tag, ProjectorBlockEntity be) {
+    public void fromTag(NbtCompound tag, ProjectorBlockEntity be) {
         read(tag.getCompound("RenderData"), be);
     }
 
@@ -78,7 +92,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(Pair.of(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
-        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(0));
+        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(new Identifier("missingno")));
     }
 
     protected abstract NbtCompound write(ProjectorBlockEntity be);
@@ -107,8 +121,7 @@ public abstract class RenderDataProvider<T> {
             //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
             matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
 
-            MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformation.Mode.GROUND, light, overlay, matrices, immediate);
-
+            MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformation.Mode.GROUND, light, overlay, matrices, immediate, 0);
         }
 
         @Override
@@ -291,9 +304,9 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         protected NbtCompound write(ProjectorBlockEntity be) {
-            NbtCompound compoundTag = new NbtCompound();
-            compoundTag.putString("Text", Text.Serializer.toJson(data));
-            return compoundTag;
+            NbtCompound NbtCompound = new NbtCompound();
+            NbtCompound.putString("Text", Text.Serializer.toJson(data));
+            return NbtCompound;
         }
 
         @Override
@@ -361,7 +374,7 @@ public abstract class RenderDataProvider<T> {
 
                 matrices.translate(-xSize / 2f, 0, -zSize / 2f); //TODO make this usable with translation sliders
 
-                mesh.render(matrices.peek().getModel());
+                mesh.render(matrices);
             }
         }
 
@@ -405,15 +418,32 @@ public abstract class RenderDataProvider<T> {
         }
     }
 
-    public static class TextureProvider extends RenderDataProvider<Integer> {
+    public static class TextureProvider extends RenderDataProvider<Identifier> {
         private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "texture");
 
-        protected TextureProvider(int data) {
+        private static final LoadingCache<String, TextureProvider> cache = CacheBuilder.newBuilder()
+                .maximumSize(20)
+                .expireAfterAccess(20, TimeUnit.SECONDS)
+                .removalListener((RemovalListener<String, TextureProvider>) notification -> MinecraftClient.getInstance().getTextureManager().destroyTexture(notification.getValue().data))
+                .build(new CacheLoader<String, TextureProvider>() {
+                    @Override
+                    public TextureProvider load(String key) {
+                        NativeImage image = loadImage(key);
+
+                        Identifier id = new Identifier(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
+
+                        MinecraftClient.getInstance().getTextureManager().registerTexture(id, new NativeImageBackedTexture(image));
+
+                        return new TextureProvider(id);
+                    }
+                });
+
+        protected TextureProvider(Identifier data) {
             super(data);
         }
 
-        public static TextureProvider of(String url) {
-            return new TextureProvider(loadTexture(url));
+        public static TextureProvider of(String url) throws ExecutionException {
+            return cache.get(url);
         }
 
         @Override
@@ -433,12 +463,12 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(-7.5, 0, 0);
 
-
             Identifier identifierTexture = new Identifier(HolographicRenders.MOD_ID, "yeet.png");
             TextureRenderLayer textureRenderLayer = new TextureRenderLayer(RenderLayer.getText(identifierTexture));
+
             VertexFormat vertexFormat = textureRenderLayer.getVertexFormat();
             BufferBuilder bufferBuilder = new BufferBuilder(5);
-            bufferBuilder.begin(7, vertexFormat);
+            bufferBuilder.begin(VertexFormat.DrawMode.QUADS, vertexFormat);
             DrawQuad(data, 0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
             bufferBuilder.end();
             RenderSystem.enableDepthTest();
@@ -446,8 +476,8 @@ public abstract class RenderDataProvider<T> {
             matrices.pop();
         }
 
-        public void DrawQuad(int texture, float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+        public void DrawQuad(Identifier texture, float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
+            MinecraftClient.getInstance().getTextureManager().bindTexture(texture);
             Matrix4f matrix = stack.peek().getModel();
             float x2 = offX + width, y2 = offY + height;
             buffer.vertex(matrix, offX, offY, 1.0f).texture(0.0f, 0.0f).next();
@@ -456,74 +486,36 @@ public abstract class RenderDataProvider<T> {
             buffer.vertex(matrix, x2, offY, 1.0f).texture(1.0f, 0.0f).next();
         }
 
-        private static final Map<String, Integer> IMAGE_CACHE = new HashMap<>();
-
-        public static int loadTexture(String loc) {
-            if (IMAGE_CACHE.containsKey(loc)) {
-                return IMAGE_CACHE.get(loc);
-            }
-            GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_PIXELS, 0);
-            GlStateManager.pixelStore(GL11.GL_UNPACK_SKIP_ROWS, 0);
-            BufferedImage image = loadImage(loc);
-            if (image != null) {
-                int[] pixels = new int[image.getWidth() * image.getHeight()];
-                image.getRGB(0, 0, image.getWidth(), image.getHeight(), pixels, 0, image.getWidth());
-
-                ByteBuffer buffer = BufferUtils.createByteBuffer(image.getWidth() * image.getHeight() * 4);
-                Color c;
-
-                for (int y = 0; y < image.getHeight(); y++) {
-                    for (int x = 0; x < image.getWidth(); x++) {
-                        c = new Color(image.getRGB(x, y));
-                        buffer.put((byte) c.getRed());
-                        buffer.put((byte) c.getGreen());
-                        buffer.put((byte) c.getBlue());
-                        buffer.put((byte) c.getAlpha());
-                    }
-                }
-                buffer.flip();
-
-                int textureID = GL11.glGenTextures(); //Generate texture ID
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureID); //Bind texture ID
-
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-
-                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, image.getWidth(), image.getHeight(), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-                IMAGE_CACHE.put(loc, textureID);
-                return textureID;
-            }
-            IMAGE_CACHE.put(loc, 0);
-            return 0;
-        }
-
-
-        private static BufferedImage loadImage(String loc) {
+        private static NativeImage loadImage(String loc) {
             try {
                 URL url = new URL(loc);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
                 if (conn.getContentType().contains("png") || conn.getContentType().contains("jpeg")
                         || conn.getContentType().contains("tiff") || conn.getContentType().contains("bmp")) {
-                    return ImageIO.read(url);
+                    return getFromBuffered(ImageIO.read(url));
                 }
                 conn.disconnect();
             } catch (IOException ignored) {}
             return null;
         }
 
+        private static NativeImage getFromBuffered(BufferedImage image) throws IOException {
+            try (FastByteArrayOutputStream outputStream = new FastByteArrayOutputStream()) {
+                ImageIO.write(image, "PNG", outputStream);
+                return NativeImage.read(new FastByteArrayInputStream(outputStream.array));
+            }
+        }
+
         @Override
         protected NbtCompound write(ProjectorBlockEntity be) {
             final NbtCompound tag = new NbtCompound();
-            tag.putInt("Texture", data);
+            tag.putString("Texture", data.toString());
             return tag;
         }
 
         @Override
         protected void read(NbtCompound tag, ProjectorBlockEntity be) {
-            this.data = tag.getInt("Texture");
+            this.data = new Identifier(tag.getString("Texture"));
         }
 
         @Override
