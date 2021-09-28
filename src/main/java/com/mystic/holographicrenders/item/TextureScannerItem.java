@@ -8,7 +8,7 @@ import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -31,7 +31,7 @@ public class TextureScannerItem extends Item {
         ItemStack itemStack = player.getStackInHand(hand);
 
         if (world.isClient) {
-            MinecraftClient.getInstance().openScreen(new TextboxScreen(new TextboxScreenRoot(hand)));
+            MinecraftClient.getInstance().setScreen(new TextboxScreen(new TextboxScreenRoot(hand)));
         }
 
         return TypedActionResult.success(itemStack);
@@ -39,7 +39,7 @@ public class TextureScannerItem extends Item {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        CompoundTag tag = stack.getOrCreateTag();
+        NbtCompound tag = stack.getOrCreateNbt();
         if(tag.contains("URL")) {
             tooltip.add(new LiteralText("URL: ").formatted(Formatting.GREEN).append(new LiteralText(tag.getString("URL")).formatted(Formatting.YELLOW)));
         } else {

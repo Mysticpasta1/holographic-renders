@@ -16,7 +16,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -24,6 +24,8 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
+
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory {
@@ -38,8 +40,8 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
         return renderer;
     }
 
-    public ProjectorBlockEntity() {
-        super(HolographicRenders.PROJECTOR_BLOCK_ENTITY);
+    public ProjectorBlockEntity(BlockPos pos, BlockState state) {
+        super(HolographicRenders.PROJECTOR_BLOCK_ENTITY, pos, state);
     }
 
     public ItemStack getItem() {
@@ -70,23 +72,23 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     }
 
     @Override
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
+    public void readNbt(NbtCompound tag) {
+        super.readNbt(tag);
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
         renderer.fromTag(tag, this);
-        inventory.set(0, ItemStack.fromTag(tag.getCompound("Stack")));
+        inventory.set(0, ItemStack.fromNbt(tag.getCompound("Stack")));
     }
 
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
+    public NbtCompound writeNbt(NbtCompound tag) {
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
-        tag.put("Stack", getItem().toTag(new CompoundTag()));
+        tag.put("Stack", getItem().writeNbt(new NbtCompound()));
         renderer.toTag(tag, this);
-        return super.toTag(tag);
+        return super.writeNbt(tag);
     }
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
@@ -115,13 +117,13 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     }
 
     @Override
-    public void fromClientTag(CompoundTag tag) {
-        fromTag(getCachedState(), tag);
+    public void fromClientTag(NbtCompound tag) {
+        readNbt(tag);
     }
 
     @Override
-    public CompoundTag toClientTag(CompoundTag tag) {
-        return toTag(tag);
+    public NbtCompound toClientTag(NbtCompound tag) {
+        return writeNbt(tag);
     }
 
     @Override

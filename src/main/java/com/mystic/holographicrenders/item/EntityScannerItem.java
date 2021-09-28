@@ -10,7 +10,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
@@ -31,17 +31,17 @@ public class EntityScannerItem extends Item {
 
     @Nullable
     public EntityType<?> getEntityType(ItemStack stack){
-        return Registry.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stack.getOrCreateTag().getCompound("Entity").getString("id"))).orElse(null);
+        return Registry.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stack.getOrCreateNbt().getCompound("Entity").getString("id"))).orElse(null);
     }
 
     @Override
     public ActionResult useOnEntity(ItemStack stack, PlayerEntity user, LivingEntity entity, Hand hand) {
 
-        CompoundTag stackTag = user.getStackInHand(hand).getOrCreateTag();
+        NbtCompound stackTag = user.getStackInHand(hand).getOrCreateNbt();
         if (stackTag.contains("Entity")) return ActionResult.PASS;
 
-        CompoundTag entityTag = new CompoundTag();
-        entity.saveSelfToTag(entityTag);
+        NbtCompound entityTag = new NbtCompound();
+        entity.saveSelfNbt(entityTag);
 
         stackTag.put("Entity", entityTag);
 
@@ -52,8 +52,8 @@ public class EntityScannerItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         final ItemStack stack = user.getStackInHand(hand);
         if (user.isSneaking()) {
-            if (stack.getOrCreateTag().contains("Entity")) {
-                stack.getOrCreateTag().remove("Entity");
+            if (stack.getOrCreateNbt().contains("Entity")) {
+                stack.getOrCreateNbt().remove("Entity");
                 return TypedActionResult.success(stack);
             }
         }
@@ -63,7 +63,7 @@ public class EntityScannerItem extends Item {
 
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        CompoundTag stackTag = stack.getOrCreateTag();
+        NbtCompound stackTag = stack.getOrCreateNbt();
 
         if (stackTag.contains("Entity")) {
             Registry.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stackTag.getCompound("Entity").getString("id"))).ifPresent(entityType -> {

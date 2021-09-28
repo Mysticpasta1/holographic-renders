@@ -12,6 +12,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntity;
@@ -21,7 +22,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
@@ -40,7 +41,7 @@ public class HolographicRenders implements ModInitializer {
 
     public static final Block PROJECTOR_BLOCK = new ProjectorBlock();
     public static final Item PROJECTOR_ITEM = new BlockItem(PROJECTOR_BLOCK, new Item.Settings().group(HOLOGRAPHIC_RENDERS_CREATIVE_TAB));
-    public static final BlockEntityType<ProjectorBlockEntity> PROJECTOR_BLOCK_ENTITY = BlockEntityType.Builder.create(ProjectorBlockEntity::new, PROJECTOR_BLOCK).build(null);
+    public static final BlockEntityType<ProjectorBlockEntity> PROJECTOR_BLOCK_ENTITY = FabricBlockEntityTypeBuilder.create(ProjectorBlockEntity::new, PROJECTOR_BLOCK).build(null);
 
     public static final Identifier PROJECTOR_ID = new Identifier(MOD_ID, "projector");
     public static final Identifier TEXTBOX_ID = new Identifier(MOD_ID, "textbox");
@@ -68,9 +69,9 @@ public class HolographicRenders implements ModInitializer {
             server.execute(() -> {
                 ItemStack stack = player.getStackInHand(hand);
                 if(stack.getItem() instanceof TextureScannerItem) {
-                    CompoundTag tag = stack.getOrCreateTag();
+                    NbtCompound tag = stack.getOrCreateNbt();
                     tag.putString("URL", url);
-                    stack.toTag(tag);
+                    stack.writeNbt(tag);
                 }
             });
         });
