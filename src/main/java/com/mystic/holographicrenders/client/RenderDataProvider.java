@@ -29,6 +29,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -505,12 +506,14 @@ public abstract class RenderDataProvider<T> {
             try {
                 URL url = new URL(loc);
                 HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                if (conn.getContentType().contains("png") || conn.getContentType().contains("jpeg")
+                if (conn.getContentType().contains("png") || conn.getContentType().contains("jpeg") || conn.getContentType().contains("jpg")
                         || conn.getContentType().contains("tiff") || conn.getContentType().contains("bmp")) {
                     return ImageIO.read(url);
                 }
                 conn.disconnect();
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {} catch (NullPointerException e) {
+                System.out.println("Failed to get retrieve texture from " + loc + "!");
+            }
             return null;
         }
 

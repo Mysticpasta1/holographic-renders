@@ -30,7 +30,7 @@ public class TextboxScreenRoot extends LightweightGuiDescription {
         root.validate(this);
         button.setOnClick(() -> {
             PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeString(textFieldWidget.getText());
+            buf.writeString(textFieldWidget.getText(), 2000);
             buf.writeEnumConstant(hand);
             ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "url_packet"), buf);
         });

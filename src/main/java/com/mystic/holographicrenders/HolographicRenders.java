@@ -63,7 +63,7 @@ public class HolographicRenders implements ModInitializer {
 
         ServerPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.ACTION_REQUEST_ID, ProjectorScreenPacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
-            String url = buf.readString();
+            String url = buf.readString(2000);
             Hand hand = buf.readEnumConstant(Hand.class);
             server.execute(() -> {
                 ItemStack stack = player.getStackInHand(hand);
@@ -81,16 +81,6 @@ public class HolographicRenders implements ModInitializer {
                 BlockEntity blockEntity = player.world.getBlockEntity(pos);
                 if(blockEntity instanceof ProjectorBlockEntity){
                     ((ProjectorBlockEntity) blockEntity).setLightEnabled(lights);
-                }
-            });
-        });
-        ClientPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "render_packet"), (client, handler, buf, responseSender) -> {
-            ItemStack stack = buf.readItemStack();
-            BlockPos pos = buf.readBlockPos();
-            client.execute(() -> {
-                BlockEntity blockEntity = MinecraftClient.getInstance().world.getBlockEntity(pos);
-                if(blockEntity instanceof ProjectorBlockEntity){
-                    ((ProjectorBlockEntity) blockEntity).setRenderer(ItemProjectionHandler.getDataProvider((ProjectorBlockEntity) blockEntity, stack), false);
                 }
             });
         });
