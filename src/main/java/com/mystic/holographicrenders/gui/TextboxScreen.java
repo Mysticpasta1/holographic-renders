@@ -41,7 +41,7 @@ public class TextboxScreen extends FacadeScreen {
 
         button.hook(PastryButton.ClickEvent.class, clickEvent -> {
             PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeString(textField.getText().getPlaintext());
+            buf.writeString(textField.getText().getPlaintext(), 2000);
             buf.writeEnumConstant(hand);
             ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "url_packet"), buf);
         });

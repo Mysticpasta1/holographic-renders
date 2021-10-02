@@ -107,15 +107,5 @@ public class HolographicRenders implements ModInitializer {
                 }
             });
         });
-        ClientPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "render_packet"), (client, handler, buf, responseSender) -> {
-            ItemStack stack = buf.readItemStack();
-            BlockPos pos = buf.readBlockPos();
-            client.execute(() -> {
-                BlockEntity blockEntity = MinecraftClient.getInstance().world.getBlockEntity(pos);
-                if(blockEntity instanceof ProjectorBlockEntity){
-                    ((ProjectorBlockEntity) blockEntity).setRenderer(ItemProjectionHandler.getDataProvider((ProjectorBlockEntity) blockEntity, stack), false);
-                }
-            });
-        });
     }
 }

@@ -1,5 +1,6 @@
 package com.mystic.holographicrenders.item;
 
+import com.mystic.holographicrenders.Common;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.gui.TextboxScreen;
 import net.minecraft.client.MinecraftClient;
@@ -29,8 +30,8 @@ public class TextureScannerItem extends Item {
 
         ItemStack itemStack = player.getStackInHand(hand);
 
-        if (world.isClient) {
-            MinecraftClient.getInstance().setScreen(new TextboxScreen((hand)));
+        if (world.isClient && Common.textScreenRunnable != null) {
+            Common.textScreenRunnable.accept(hand);
         }
 
         return TypedActionResult.success(itemStack);
