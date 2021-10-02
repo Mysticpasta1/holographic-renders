@@ -1,21 +1,60 @@
 package com.mystic.holographicrenders.client;
 
+import static com.teamwizardry.librarianlib.core.util.Shorthand.vec;
+import static net.minecraft.client.gui.hud.BackgroundHelper.ColorMixer.getAlpha;
+import static net.minecraft.client.gui.hud.BackgroundHelper.ColorMixer.getBlue;
+import static net.minecraft.client.gui.hud.BackgroundHelper.ColorMixer.getGreen;
+import static net.minecraft.client.gui.hud.BackgroundHelper.ColorMixer.getRed;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
+import javax.imageio.ImageIO;
+import javax.net.ssl.HttpsURLConnection;
+import javax.swing.text.NumberFormatter;
+
 import com.glisco.worldmesher.WorldMesh;
+import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
+import com.madgag.gif.fmsware.GifDecoder;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import com.mystic.holographicrenders.gui.Textures;
+import com.mystic.holographicrenders.item.WidgetType;
+import com.teamwizardry.librarianlib.core.util.Client;
+import com.teamwizardry.librarianlib.facade.FacadeScreen;
+import com.teamwizardry.librarianlib.facade.FacadeWidget;
+import com.teamwizardry.librarianlib.facade.layer.GuiLayer;
+import com.teamwizardry.librarianlib.facade.layer.GuiLayerEvents;
+import com.teamwizardry.librarianlib.facade.layers.SpriteLayer;
+import com.teamwizardry.librarianlib.facade.layers.text.TextFit;
+import com.teamwizardry.librarianlib.facade.pastry.layers.PastryLabel;
+import com.teamwizardry.librarianlib.math.Matrix4d;
+import com.teamwizardry.librarianlib.mosaic.Sprite;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
 import net.minecraft.client.render.model.json.ModelTransformation;
 import net.minecraft.client.texture.NativeImage;
@@ -24,39 +63,27 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.map.MapState;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Matrix4f;
 import net.minecraft.util.math.Vec3f;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 
-import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
-import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
-import javax.imageio.ImageIO;
-import javax.net.ssl.HttpsURLConnection;
-
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 
 /**
  * @param <T>
  */
 public abstract class RenderDataProvider<T> {
-
     protected T data;
 
     protected RenderDataProvider(T data) {
@@ -82,7 +109,12 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(Pair.of(BlockPos.ORIGIN, BlockPos.ORIGIN)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
-        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(new Identifier("missingno")));
+        RenderDataProviderRegistry.register(TextureProvider.ID, () -> {
+            Identifier id = new Identifier("missingno");
+            return new TextureProvider(id, new RegularSprite(id, 16,16));
+        });
+        RenderDataProviderRegistry.register(WidgetProvider.ID, () -> new WidgetProvider(WidgetType.Blank, BlockPos.ORIGIN));
+        RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(-1));
     }
 
     protected abstract NbtCompound write(ProjectorBlockEntity be);
@@ -311,7 +343,7 @@ public abstract class RenderDataProvider<T> {
     }
 
     public static class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
-        private static LoadingCache<Pair<BlockPos, BlockPos>, AreaProvider> cache = CacheBuilder.newBuilder()
+        private static final LoadingCache<Pair<BlockPos, BlockPos>, AreaProvider> cache = CacheBuilder.newBuilder()
                 .maximumSize(20)
                 .expireAfterAccess(20, TimeUnit.SECONDS)
                 .build(new CacheLoader<org.apache.commons.lang3.tuple.Pair<BlockPos, BlockPos>, AreaProvider>() {
@@ -418,16 +450,25 @@ public abstract class RenderDataProvider<T> {
                 .build(new CacheLoader<String, TextureProvider>() {
                     @Override
                     public TextureProvider load(String key) {
-                        NativeImage image = loadImage(key);
-                        Identifier id = new Identifier(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
-                        MinecraftClient.getInstance().getTextureManager().registerTexture(id, new NativeImageBackedTexture(image));
+                        try {
+                            Pair<Identifier, Sprite> pair = loadImage(key);
+                            return new TextureProvider(pair.getKey(), pair.getValue());
+                        } catch (Exception e) {
+                            e.printStackTrace();
 
-                        return new TextureProvider(id);
+                            Identifier id = new Identifier("missingno");
+
+                            return new TextureProvider(id, new RegularSprite(id, 16,16));
+                        }
                     }
                 });
 
-        protected TextureProvider(Identifier data) {
+        private final Sprite sprite;
+        private int tick = 0;
+
+        protected TextureProvider(Identifier data, Sprite value) {
             super(data);
+            sprite = value;
         }
 
         public static TextureProvider of(String url) throws ExecutionException {
@@ -436,7 +477,6 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-
             matrices.push();
             matrices.scale(0.1f, -0.1f, 0.1f);
             matrices.translate(5, -20, 5);
@@ -451,36 +491,101 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(-7.5, 0, 0);
 
-            BufferBuilder bufferBuilder = Tessellator.getInstance().getBuffer();
-            RenderSystem.setShaderTexture(0, data);
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            bufferBuilder.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
-            drawQuad(0.0f, 0.0f, 16.0f, 16.0f, matrices, bufferBuilder);
-            bufferBuilder.end();
+            Matrix4d matrix = new Matrix4d(matrices.peek().getModel());
+
+            sprite.draw(matrix, 0,0, 16,16, (int) ((Client.getTime().getTime() * 50) % sprite.getFrameCount()), Color.WHITE);
+
             RenderSystem.enableDepthTest();
-            BufferRenderer.draw(bufferBuilder);
             matrices.pop();
         }
 
-        public void drawQuad(float offX, float offY, float width, float height, MatrixStack stack, BufferBuilder buffer) {
-            Matrix4f matrix = stack.peek().getModel();
-            float x2 = offX + width, y2 = offY + height;
-            buffer.vertex(matrix, offX, offY, 1.0f).texture(0.0f, 0.0f).next();
-            buffer.vertex(matrix, offX, y2, 1.0f).texture(0.0f, 1.0f).next();
-            buffer.vertex(matrix, x2, y2, 1.0f).texture(1.0f, 1.0f).next();
-            buffer.vertex(matrix, x2, offY, 1.0f).texture(1.0f, 0.0f).next();
+        private static Pair<Identifier, Sprite> loadImage(String loc) throws IOException {
+            URL url = new URL(loc);
+            HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+
+            Sprite sprite = null;
+            NativeImage image = null;
+
+            String type = conn.getContentType();
+
+            Identifier id = new Identifier(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
+
+            if(type.contains("gif")) {
+                GifSprite.GifDefinition definition = new GifSprite.GifDefinition();
+                GifDecoder decoder = getFrames(conn.getInputStream());
+
+                definition.width = decoder.getFrameSize().width;
+                definition.height = decoder.getFrameSize().height * decoder.getFrameCount();
+                definition.uvHeight = 1 / (float) decoder.getFrameCount();
+
+                List<Integer> frames = new ArrayList<>();
+
+                for (int i = 0; i < decoder.getFrameCount(); i++) {
+                    for (int time = 0; time < decoder.getDelay(i); time++) {
+                        frames.add(i);
+                    }
+                }
+
+                definition.frames = frames.stream().mapToInt(Integer::intValue).toArray();
+
+                BufferedImage newImage = new BufferedImage(decoder.getFrameSize().width, decoder.getFrameSize().height * decoder.getFrameCount(), BufferedImage.TYPE_INT_ARGB);
+
+                Graphics bg = newImage.getGraphics();
+
+                for (int i = 0; i < decoder.getFrameCount(); i++) {
+                    bg.drawImage(decoder.getFrame(i), 0, i * decoder.getFrameSize().width, null);
+                }
+                bg.dispose();
+
+                image = new NativeImage(NativeImage.Format.RGBA, newImage.getWidth(), newImage.getHeight(), false);
+
+                for (int x = 0; x < image.getWidth(); x++)
+                    for (int y = 0; y < image.getHeight(); y++) {
+                        image.setColor(x, y, convertColor(newImage.getRGB(x, y)));
+                    }
+
+                sprite = new GifSprite(id, definition);
+
+            } else if(!type.contains("gif") && (type.contains("png") || type.contains("jpeg") || type.contains("jpg") || type.contains("tiff"))) {
+                if (type.contains("png")) {
+                    image = NativeImage.read(conn.getInputStream());
+                } else if (type.contains("jpeg") || type.contains("jpg") || type.contains("tiff")) {
+                    BufferedImage bufferedImage = convertToARGB(ImageIO.read(conn.getInputStream()));
+
+                    image = new NativeImage(NativeImage.Format.RGBA, bufferedImage.getWidth(), bufferedImage.getHeight(), false);
+
+                    for (int x = 0; x < image.getWidth(); x++)
+                        for (int y = 0; y < image.getHeight(); y++) {
+                            image.setColor(x, y, convertColor(bufferedImage.getRGB(x, y)));
+                        }
+                }
+
+                sprite = new RegularSprite(id, image.getWidth(), image.getHeight());
+            }
+
+            conn.disconnect();
+            MinecraftClient.getInstance().getTextureManager().registerTexture(id, new NativeImageBackedTexture(image));
+
+            return Pair.of(id, sprite);
         }
 
-        private static NativeImage loadImage(String loc) {
-            try {
-                URL url = new URL(loc);
-                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                if (conn.getContentType().contains("png") ) {
-                    return NativeImage.read(conn.getInputStream());
-                }
-                conn.disconnect();
-            } catch (IOException ignored) {}
-            return null;
+        public static int convertColor(int color) {
+            return (getAlpha(color) & 255) << 24 | (getBlue(color) & 255) << 16 | (getGreen(color) & 255) << 8 | (getRed(color) & 255) << 0;
+        }
+
+        public static GifDecoder getFrames(InputStream gif) throws IOException{
+            GifDecoder decoder = new GifDecoder();
+            decoder.read(gif);
+            return decoder;
+        }
+
+        private static BufferedImage convertToARGB(BufferedImage srcImage) {
+            BufferedImage newImage = new BufferedImage(srcImage.getWidth(null),
+                    srcImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+            Graphics bg = newImage.getGraphics();
+            bg.drawImage(srcImage, 0, 0, null);
+            bg.dispose();
+            return newImage;
         }
 
         @Override
@@ -533,4 +638,195 @@ public abstract class RenderDataProvider<T> {
         }
     }
 
+    public static class MapProvider extends RenderDataProvider<Integer> {
+        private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "map");
+
+        private static final LoadingCache<Integer, MapProvider> cache = CacheBuilder.newBuilder()
+                .maximumSize(20)
+                .expireAfterAccess(20, TimeUnit.SECONDS)
+                .build(new CacheLoader<Integer, MapProvider>() {
+                    @Override
+                    public MapProvider load(Integer key) {
+                        return new MapProvider(key);
+                    }
+                });
+
+        protected MapProvider(Integer id) {
+            super(id);
+        }
+
+        public static RenderDataProvider<?> of(Integer id) {
+            try {
+                return cache.get(id);
+            } catch (ExecutionException e) {
+                return new MapProvider(-1);
+            }
+        }
+
+        @Override
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
+            matrices.push();
+            matrices.scale(0.1f, -0.1f, 0.1f);
+            matrices.translate(5, -20, 5);
+
+            PlayerEntity player = MinecraftClient.getInstance().player;
+            double x = player.getX() - be.getPos().getX() - 0.5;
+            double z = player.getZ() - be.getPos().getZ() - 0.5;
+            float rot = (float) MathHelper.atan2(z, x);
+
+            matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
+            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90));
+
+            matrices.translate(-7.5, 0, 0);
+
+            MapState state = FilledMapItem.getMapState(data, be.getWorld());
+            if(state != null) {
+                matrices.scale(0.125f, 0.125f, 0.125f);
+                MinecraftClient.getInstance().gameRenderer.getMapRenderer().draw(matrices, immediate, data, state, false, light);
+            }
+
+            RenderSystem.enableDepthTest();
+            matrices.pop();
+        }
+
+        @Override
+        protected NbtCompound write(ProjectorBlockEntity be) {
+            final NbtCompound tag = new NbtCompound();
+            tag.putInt("Id", data);
+            return tag;
+        }
+
+        @Override
+        protected void read(NbtCompound tag, ProjectorBlockEntity be) {
+            this.data = tag.getInt("Id");
+        }
+
+        @Override
+        public Identifier getTypeId() {
+            return ID;
+        }
+    }
+
+    public static class WidgetProvider extends RenderDataProvider<Pair<WidgetType, BlockPos>> {
+        private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "widget");
+
+        private FacadeWidget widget;
+
+        private GuiLayer root;
+
+        private FacadeWidget createWidget(WidgetType type, BlockPos pos) {
+            FacadeScreen screen = new FacadeScreen(LiteralText.EMPTY);
+            FacadeWidget widget = screen.getFacade();
+            widget.getRoot().add(root = new GuiLayer());
+
+            switch (type) {
+                case Blank: {
+                    root.setSize(vec(200, 200));
+                    root.add(new SpriteLayer(Textures.projector, 0, 0, 200, 200));
+                    break;
+                }
+                case Clock: {
+                    SpriteLayer background = new SpriteLayer(Textures.textfield, 0, 0, 100, 100);
+                    PastryLabel clock = new PastryLabel(0,0, "Avacado");
+                    clock.setColor(Color.WHITE);
+                    root.setScale(0.5);
+                    background.add(clock);
+                    background.hook(GuiLayerEvents.Update.class, event -> {
+                        float time = Client.getWorldTime().getTime();
+
+                        int hour = (int) (time / 1000f);
+
+                        int minutes = (int) ((time % 1000f /1000f) * 60);
+
+                        clock.setText(Strings.padStart("" + hour, 2, '0') + ":" + Strings.padStart("" + minutes, 2, '0'));
+                        clock.fitToText(TextFit.BOTH);
+                        background.setSize(clock.getSize());
+                        background.setX(background.getWidth()/2);
+                        root.setSize(background.getSize());
+                    });
+
+                    root.add(background);
+                    break;
+                }
+            }
+
+            widget.getRoot().hook(GuiLayerEvents.LayoutChildren.class, event -> {
+                root.setPos(vec(-root.getWidth()/2, root.getHeight()));
+            });
+
+            return widget;
+        }
+
+            private static final LoadingCache<Pair<WidgetType, BlockPos>, WidgetProvider> cache = CacheBuilder.newBuilder()
+                    .maximumSize(20)
+                    .expireAfterAccess(20, TimeUnit.SECONDS)
+                    .build(new CacheLoader<Pair<WidgetType, BlockPos>, WidgetProvider>() {
+                        @Override
+                        public WidgetProvider load(Pair<WidgetType, BlockPos> key) {
+                            return new WidgetProvider(key.getKey(), key.getValue());
+                        }
+                    });
+
+
+        public WidgetProvider(WidgetType type, BlockPos pos) {
+            super(Pair.of(type, pos));
+            widget = createWidget(type, pos);
+        }
+
+        public static WidgetProvider of(WidgetType widget, BlockPos pos) throws ExecutionException {
+            return cache.get(Pair.of(widget, pos));
+        }
+
+        @Override
+        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
+            RenderSystem.enableDepthTest();
+
+            matrices.push();
+
+            float height = root.getHeightf();
+            float width = root.getHeightf();
+
+            matrices.translate(0.5,1,0.5);
+
+            PlayerEntity player = MinecraftClient.getInstance().player;
+            double x = player.getX() - be.getPos().getX() - 0.5;
+            double z = player.getZ() - be.getPos().getZ() - 0.5;
+            float rot = (float) MathHelper.atan2(z, x);
+
+            matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
+            matrices.multiply(Vec3f.NEGATIVE_Y.getDegreesQuaternion(90));
+
+            matrices.translate(0, 0.5,0);
+
+            matrices.scale(-1/width, -1/height, 1f);
+
+            matrices.translate(0, -height,0);
+
+            widget.update();
+            widget.render(matrices);
+
+            matrices.pop();
+
+            RenderSystem.disableDepthTest();
+        }
+
+        @Override
+        protected NbtCompound write(ProjectorBlockEntity be) {
+            final NbtCompound tag = new NbtCompound();
+            tag.putLong("Pos", data.getValue().asLong());
+            tag.putInt("Widget", data.getKey().ordinal());
+            return tag;
+        }
+
+        @Override
+        protected void read(NbtCompound tag, ProjectorBlockEntity be) {
+            this.data = Pair.of(WidgetType.fromId(tag.getInt("Widget")), BlockPos.fromLong(tag.getLong("Pos")));
+        }
+
+
+        @Override
+        public Identifier getTypeId() {
+            return ID;
+        }
+    }
 }

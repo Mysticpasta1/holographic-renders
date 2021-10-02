@@ -3,9 +3,12 @@ package com.mystic.holographicrenders.blocks.projector;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.item.EntityScannerItem;
+import com.mystic.holographicrenders.item.WidgetType;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
@@ -53,6 +56,18 @@ public class ItemProjectionHandler {
             } catch (ExecutionException e) {
                 return RenderDataProvider.EmptyProvider.INSTANCE;
             }
+        });
+
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.WIDGET_SCANNER, (be, stack) -> {
+            try {
+                return RenderDataProvider.WidgetProvider.of(WidgetType.fromId(be.getStack(0).getOrCreateNbt().getInt("Widget")), be.getPos());
+            } catch (ExecutionException e) {
+                return RenderDataProvider.EmptyProvider.INSTANCE;
+            }
+        });
+
+        registerBehaviour(itemStack -> itemStack.getItem() == Items.FILLED_MAP, (be, stack) -> {
+            return RenderDataProvider.MapProvider.of(FilledMapItem.getMapId(stack));
         });
 
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));

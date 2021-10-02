@@ -34,24 +34,28 @@ public class ProjectorScreenHandler extends ScreenHandler {
         super(HolographicRenders.PROJECTOR_SCREEN_HANDLER, syncId);
         this.blockEntity = (ProjectorBlockEntity) playerInventory.player.world.getBlockEntity(buffer.readBlockPos());
 
-        this.addSlot(new Slot(blockEntity, 0, 80, 35));
+        this.addSlot(new Slot(blockEntity, 0, 80 + 3, 35 + 3));
 
         // The player inventory
         for (int m = 0; m < 3; ++m) {
             for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + m * 9 + 9, 8 + l * 18, 84 + m * 18));
+                this.addSlot(new Slot(playerInventory, l + m * 9 + 9, 8 + 3 + l * 18, 84 + 3 + m * 18));
             }
         }
 
         // The player Hotbar
         for (int m = 0; m < 9; ++m) {
-            this.addSlot(new Slot(playerInventory, m, 8 + m * 18, 142));
+            this.addSlot(new Slot(playerInventory, m, 8 + 3 + m * 18, 142 + 3));
         }
     }
 
     @Override
     public boolean canUse(PlayerEntity player) {
         return blockEntity.canPlayerUse(player);
+    }
+
+    public boolean getLight() {
+        return blockEntity.lightsEnabled();
     }
 
     public void setLight(boolean lights) {
