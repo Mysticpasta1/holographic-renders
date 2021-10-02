@@ -1,8 +1,11 @@
 package com.mystic.holographicrenders.item;
 
-import com.mystic.holographicrenders.Common;
+import java.util.List;
+
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.gui.TextboxScreen;
+import com.mystic.holographicrenders.gui.WidgetScreen;
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
@@ -15,13 +18,10 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
+public class WidgetScannerItem extends Item {
 
-public class TextureScannerItem extends Item {
-
-    public TextureScannerItem() {
+    public WidgetScannerItem() {
         super(new Settings().maxCount(1).group(HolographicRenders.HOLOGRAPHIC_RENDERS_CREATIVE_TAB));
     }
 
@@ -30,8 +30,8 @@ public class TextureScannerItem extends Item {
 
         ItemStack itemStack = player.getStackInHand(hand);
 
-        if (world.isClient && Common.textScreenRunnable != null) {
-            Common.textScreenRunnable.accept(hand);
+        if (world.isClient) {
+            MinecraftClient.getInstance().setScreen(new WidgetScreen(hand));
         }
 
         return TypedActionResult.success(itemStack);
@@ -40,8 +40,8 @@ public class TextureScannerItem extends Item {
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         NbtCompound tag = stack.getOrCreateNbt();
-        if(tag.contains("URL")) {
-            tooltip.add(new LiteralText("URL: ").formatted(Formatting.GREEN).append(new LiteralText(tag.getString("URL")).formatted(Formatting.YELLOW)));
+        if(tag.contains("Widget")) {
+            tooltip.add(new LiteralText("Widget: ").formatted(Formatting.GREEN).append(new LiteralText(WidgetType.fromId(tag.getInt("Widget")).toString()).formatted(Formatting.YELLOW)));
         } else {
             tooltip.add(new LiteralText("Empty"));
         }

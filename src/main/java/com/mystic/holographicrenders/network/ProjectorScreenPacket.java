@@ -59,9 +59,7 @@ public class ProjectorScreenPacket {
         switch (type) {
             case SET_LIGHT:
                 boolean lights = packetByteBuf.readBoolean();
-                minecraftServer.execute(() -> {
-                    handler.setLight(lights);
-                });
+                minecraftServer.execute(() -> handler.setLight(lights));
                 break;
         }
 

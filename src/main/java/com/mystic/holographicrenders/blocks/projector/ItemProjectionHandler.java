@@ -3,9 +3,12 @@ package com.mystic.holographicrenders.blocks.projector;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.item.EntityScannerItem;
+import com.mystic.holographicrenders.item.WidgetType;
+
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
@@ -22,17 +25,17 @@ public class ItemProjectionHandler {
 
     static {
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
-            if (!stack.getOrCreateTag().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
+            if (!stack.getOrCreateNbt().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
             if (type == null) return RenderDataProvider.EmptyProvider.INSTANCE;
             Entity entity = type.create(be.getWorld());
-            entity.writeNbt(stack.getOrCreateTag().getCompound("Entity"));
+            entity.readNbt(stack.getOrCreateNbt().getCompound("Entity"));
             entity.updatePosition(be.getPos().getX(), be.getPos().getY(), be.getPos().getZ());
             return RenderDataProvider.EntityProvider.from(entity);
         });
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.AREA_SCANNER, (be, stack) -> {
-            NbtCompound tag = stack.getOrCreateTag();
+            NbtCompound tag = stack.getOrCreateNbt();
             if (tag.contains("Pos1") && tag.contains("Pos2")) {
                 BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
                 BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));
@@ -47,7 +50,25 @@ public class ItemProjectionHandler {
 
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> RenderDataProvider.TextureProvider.of(be.getStack(0).getOrCreateTag().getString("URL")));
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> {
+            try {
+                return RenderDataProvider.TextureProvider.of(be.getStack(0).getOrCreateNbt().getString("URL"));
+            } catch (ExecutionException e) {
+                return RenderDataProvider.EmptyProvider.INSTANCE;
+            }
+        });
+
+        registerBehaviour(stack -> stack.getItem() == HolographicRenders.WIDGET_SCANNER, (be, stack) -> {
+            try {
+                return RenderDataProvider.WidgetProvider.of(WidgetType.fromId(be.getStack(0).getOrCreateNbt().getInt("Widget")), be.getPos());
+            } catch (ExecutionException e) {
+                return RenderDataProvider.EmptyProvider.INSTANCE;
+            }
+        });
+
+        registerBehaviour(itemStack -> itemStack.getItem() == Items.FILLED_MAP, (be, stack) -> {
+            return RenderDataProvider.MapProvider.of(FilledMapItem.getMapId(stack));
+        });
 
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 

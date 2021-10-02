@@ -26,13 +26,13 @@ public class WorldRendererMixin {
         final ClientPlayerEntity player = client.player;
         if (player.getMainHandStack().getItem() != HolographicRenders.AREA_SCANNER) return;
 
-        NbtCompound tag = player.getMainHandStack().getOrCreateTag();
+        NbtCompound tag = player.getMainHandStack().getOrCreateNbt();
 
         if (!tag.contains("Pos1")) return;
 
         BlockPos origin = BlockPos.fromLong(tag.getLong("Pos1"));
 
-        HitResult result = player.raycast(player.abilities.creativeMode ? 5.0F : 4.5F, 0, false);
+        HitResult result = player.raycast(player.getAbilities().creativeMode ? 5.0F : 4.5F, 0, false);
         BlockPos size = tag.contains("Pos2") ? BlockPos.fromLong(tag.getLong("Pos2")) : (result instanceof BlockHitResult ? ((BlockHitResult) result).getBlockPos() : new BlockPos(result.getPos()));
         size = size.subtract(origin);
 
