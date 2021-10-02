@@ -22,14 +22,17 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.map.MapState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.*;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
-import org.apache.commons.lang3.ObjectUtils;
+
+import com.mystic.holographicrenders.gui.ImplementedInventory;
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -80,6 +83,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
         RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(0));
+        RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(-1));
     }
 
     protected abstract NbtCompound write(ProjectorBlockEntity be);
@@ -567,4 +571,72 @@ public abstract class RenderDataProvider<T> {
         }
     }
 
+    public static class MapProvider extends RenderDataProvider<Integer> {
+            private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "map");
+
+            private static final LoadingCache<Integer, MapProvider> cache = CacheBuilder.newBuilder()
+                    .maximumSize(20)
+                    .expireAfterAccess(20, TimeUnit.SECONDS)
+                    .build(new CacheLoader<Integer, MapProvider>() {
+                        @Override
+                        public MapProvider load(Integer key) {
+                            return new MapProvider(key);
+                        }
+                    });
+
+            protected MapProvider(Integer id) {
+                super(id);
+            }
+
+            public static RenderDataProvider<?> of(Integer id) {
+                try {
+                    return cache.get(id);
+                } catch (ExecutionException e) {
+                    return new MapProvider(-1);
+                }
+            }
+
+            @Override
+            public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+                matrices.push();
+                matrices.scale(0.1f, -0.1f, 0.1f);
+                matrices.translate(5, -20, 5);
+
+                PlayerEntity player = MinecraftClient.getInstance().player;
+                double x = player.getX() - be.getPos().getX() - 0.5;
+                double z = player.getZ() - be.getPos().getZ() - 0.5;
+                float rot = (float) MathHelper.atan2(z, x);
+
+                matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
+                matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90));
+
+                matrices.translate(-7.5, 0, 0);
+
+                MapState state = FilledMapItem.getMapState(((ImplementedInventory)be).getStack(0), be.getWorld());
+                if(state != null) {
+                    matrices.scale(0.125f, 0.125f, 0.125f);
+                    MinecraftClient.getInstance().gameRenderer.getMapRenderer().draw(matrices, immediate, state, false, light);
+                }
+
+                RenderSystem.enableDepthTest();
+                matrices.pop();
+            }
+
+            @Override
+            protected NbtCompound write(ProjectorBlockEntity be) {
+                final NbtCompound tag = new NbtCompound();
+                tag.putInt("Id", data);
+                return tag;
+            }
+
+            @Override
+            protected void read(NbtCompound tag, ProjectorBlockEntity be) {
+                this.data = tag.getInt("Id");
+            }
+
+            @Override
+            public Identifier getTypeId() {
+                return ID;
+            }
+        }
 }

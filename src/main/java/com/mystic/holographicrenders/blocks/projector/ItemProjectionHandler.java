@@ -6,6 +6,7 @@ import com.mystic.holographicrenders.item.EntityScannerItem;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
@@ -52,6 +53,10 @@ public class ItemProjectionHandler {
         registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 
         registerBehaviour(stack -> stack.getItem() == Items.NAME_TAG, (be, stack) -> RenderDataProvider.TextProvider.from(stack.getName()));
+
+        registerBehaviour(itemStack -> itemStack.getItem() == Items.FILLED_MAP, (be, stack) -> {
+            return RenderDataProvider.MapProvider.of(FilledMapItem.getMapId(stack));
+        });
     }
 
     /**
