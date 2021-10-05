@@ -8,9 +8,13 @@ import static net.minecraft.client.gui.hud.BackgroundHelper.ColorMixer.getRed;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -22,6 +26,7 @@ import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
+import javax.swing.*;
 import javax.swing.text.NumberFormatter;
 
 import com.glisco.worldmesher.WorldMesh;
@@ -47,6 +52,7 @@ import com.teamwizardry.librarianlib.facade.layers.text.TextFit;
 import com.teamwizardry.librarianlib.facade.pastry.layers.PastryLabel;
 import com.teamwizardry.librarianlib.math.Matrix4d;
 import com.teamwizardry.librarianlib.mosaic.Sprite;
+import gui.ava.html.Html2Image;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -546,9 +552,25 @@ public abstract class RenderDataProvider<T> {
 
                 sprite = new GifSprite(id, definition);
 
-            } else if(!type.contains("gif") && (type.contains("png") || type.contains("jpeg") || type.contains("jpg") || type.contains("tiff"))) {
+            } else if(!type.contains("gif") && (type.contains("png") || (type.contains("html")) || type.contains("jpeg") || type.contains("jpg") || type.contains("tiff"))) {
                 if (type.contains("png")) {
                     image = NativeImage.read(conn.getInputStream());
+                } else if (type.contains("html")) {
+                        /*BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                        String line;
+                        StringBuilder sb = new StringBuilder();
+                        while ((line = br.readLine()) != null) {
+                            sb.append(line);
+                            sb.append(System.lineSeparator());
+                        }*/
+                    BufferedImage imageFromHtml = Html2Image.fromURL(url).getImageRenderer().getBufferedImage();
+                    image = new NativeImage(NativeImage.Format.RGBA, imageFromHtml.getWidth(), imageFromHtml.getHeight(), false);
+
+                    for (int x = 0; x < image.getWidth(); x++)
+                        for (int y = 0; y < image.getHeight(); y++) {
+                            image.setColor(x, y, convertColor(imageFromHtml.getRGB(x, y)));
+                        }
+
                 } else if (type.contains("jpeg") || type.contains("jpg") || type.contains("tiff")) {
                     BufferedImage bufferedImage = convertToARGB(ImageIO.read(conn.getInputStream()));
 
