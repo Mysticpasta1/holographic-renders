@@ -43,8 +43,10 @@ import javax.net.ssl.HttpsURLConnection;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -509,12 +511,22 @@ public abstract class RenderDataProvider<T> {
         private static BufferedImage loadImage(String loc) {
             try {
                 URL url = new URL(loc);
-                HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-                if (conn.getContentType().contains("png") || conn.getContentType().contains("jpeg") || conn.getContentType().contains("jpg")
-                        || conn.getContentType().contains("tiff") || conn.getContentType().contains("bmp")) {
-                    return ImageIO.read(url);
+                URLConnection conn = url.openConnection();
+                if(conn instanceof HttpsURLConnection) {
+                    HttpsURLConnection sconn = (HttpsURLConnection) conn;
+                    if (sconn.getContentType().contains("png") || sconn.getContentType().contains("jpeg") || sconn.getContentType().contains("jpg")
+                            || sconn.getContentType().contains("tiff") || sconn.getContentType().contains("bmp")) {
+                        return ImageIO.read(url);
+                    }
+                    sconn.disconnect();
+                } else if(conn instanceof HttpURLConnection) {
+                    HttpURLConnection nsconn = (HttpURLConnection) conn;
+                    if (nsconn.getContentType().contains("png") || nsconn.getContentType().contains("jpeg") || nsconn.getContentType().contains("jpg")
+                            || nsconn.getContentType().contains("tiff") || nsconn.getContentType().contains("bmp")) {
+                        return ImageIO.read(url);
+                    }
+                    nsconn.disconnect();
                 }
-                conn.disconnect();
             } catch (IOException ignored) {} catch (NullPointerException e) {
                 System.out.println("Failed to get retrieve texture from " + loc + "!");
             }
