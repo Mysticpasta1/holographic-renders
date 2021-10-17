@@ -2,11 +2,10 @@ package com.mystic.holographicrenders.item;
 
 import java.util.List;
 
+import com.mystic.holographicrenders.Common;
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.gui.WidgetScreen;
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -30,8 +29,8 @@ public class WidgetScannerItem extends Item {
 
         ItemStack itemStack = player.getStackInHand(hand);
 
-        if (world.isClient) {
-            MinecraftClient.getInstance().setScreen(new WidgetScreen(hand));
+        if (world.isClient &&  Common.widgetScreenRunnable != null) {
+            Common.widgetScreenRunnable.accept(hand);
         }
 
         return TypedActionResult.success(itemStack);

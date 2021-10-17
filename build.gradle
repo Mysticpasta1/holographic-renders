@@ -36,8 +36,6 @@ dependencies {
 
 	modImplementation "com.glisco:worldmesher-0.1-dev"
 	include "com.glisco:worldmesher-0.1"
-
-	implementation 'com.github.AlexPresso:java-html2image:2.0'
 	implementation 'com.madgag:animated-gif-lib:1.4'
 	include 'com.madgag:animated-gif-lib:1.4'
 

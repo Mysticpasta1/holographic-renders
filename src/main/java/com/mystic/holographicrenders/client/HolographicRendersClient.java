@@ -6,6 +6,7 @@ import com.mystic.holographicrenders.blocks.projector.ItemProjectionHandler;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import com.mystic.holographicrenders.gui.ProjectorScreen;
 import com.mystic.holographicrenders.gui.TextboxScreen;
+import com.mystic.holographicrenders.gui.WidgetScreen;
 import com.mystic.holographicrenders.network.ProjectorScreenPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -41,5 +42,6 @@ public class HolographicRendersClient implements ClientModInitializer {
             });
         });
         Common.textScreenRunnable = (hand -> MinecraftClient.getInstance().setScreen(new TextboxScreen(hand)));
+        Common.widgetScreenRunnable = (hand ->  MinecraftClient.getInstance().setScreen(new WidgetScreen(hand)));
     }
 }
