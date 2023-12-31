@@ -14,7 +14,7 @@
   },
 
   "license": "MIT",
-  "icon": "assets/modid/icon.png",
+  "icon": "assets/holographic_renders/icon.png",
 
   "environment": "*",
   "entrypoints": {
@@ -30,9 +30,9 @@
   ],
 
   "depends": {
-    "fabricloader": ">=0.11.3",
+    "fabricloader": ">=0.15.3",
     "fabric": "*",
-    "minecraft": "1.17.x"
+    "minecraft": "1.20.x"
   },
   "suggests": {
     "another-mod": "*"
