@@ -7,7 +7,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -65,19 +64,19 @@ public class AreaScannerItem extends Item {
 
         if (tag.contains("Pos1")) {
             BlockPos pos = BlockPos.fromLong(tag.getLong("Pos1"));
-            newLines.add(new LiteralText("§7Start Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
+            newLines.add(Text.of("§7Start Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
         }
 
         if (tag.contains("Pos2")) {
             BlockPos pos = BlockPos.fromLong(tag.getLong("Pos2"));
-            newLines.add(new LiteralText("§7End Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
+            newLines.add(Text.of("§7End Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
         }
 
         if (newLines.isEmpty()) {
-            newLines.add(new LiteralText("§7Blank"));
+            newLines.add(Text.of("§7Blank"));
         } else if (newLines.size() == 2) {
-            newLines.add(new LiteralText(""));
-            newLines.add(new LiteralText("§aReady to project!"));
+            newLines.add(Text.of(""));
+            newLines.add(Text.of("§aReady to project!"));
         }
 
         tooltip.addAll(newLines);

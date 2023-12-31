@@ -1,6 +1,5 @@
 package com.mystic.holographicrenders.client;
 
-import com.teamwizardry.librarianlib.mosaic.Sprite;
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.util.Identifier;

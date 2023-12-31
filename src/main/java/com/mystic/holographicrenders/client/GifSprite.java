@@ -1,6 +1,5 @@
 package com.mystic.holographicrenders.client;
 
-import com.teamwizardry.librarianlib.mosaic.Sprite;
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.util.Identifier;
@@ -16,43 +15,35 @@ public class GifSprite implements Sprite {
         this.definition = definition;
     }
 
-    @Override
     public int getFrameCount() {
         return definition.frames.length;
     }
 
-    @Override
     public int getHeight() {
         return definition.height;
     }
 
     @NotNull
-    @Override
     public Identifier getTexture() {
         return identifier;
     }
 
-    @Override
     public float getUSize() {
         return 1.0f;
     }
 
-    @Override
     public float getVSize() {
         return definition.uvHeight;
     }
 
-    @Override
     public int getWidth() {
         return definition.width;
     }
 
-    @Override
     public float minU(int animFrames) {
         return 0;
     }
 
-    @Override
     public float minV(int animFrames) {
         return getVSize() * definition.frames[MathHelper.clamp(animFrames, 0, getFrameCount()-1)];
     }

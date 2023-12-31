@@ -5,7 +5,6 @@ import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
-import net.fabricmc.fabric.api.block.entity.BlockEntityClientSerializable;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -14,17 +13,20 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.listener.ClientPlayPacketListener;
+import net.minecraft.network.packet.Packet;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClientSerializable, ExtendedScreenHandlerFactory, ImplementedInventory {
+public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
     private float alpha = 1;
@@ -79,12 +81,12 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     }
 
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
+    public void writeNbt(NbtCompound tag) {
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
         tag.put("Stack", getItem().writeNbt(new NbtCompound()));
         renderer.toTag(tag, this);
-        return super.writeNbt(tag);
+        super.writeNbt(tag);
     }
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
@@ -98,7 +100,7 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
     public void markDirty() {
         super.markDirty();
         if (!world.isClient) {
-            sync();
+            world.updateListeners(pos, getCachedState(), getCachedState(), 2);
         }
     }
 
@@ -109,17 +111,19 @@ public class ProjectorBlockEntity extends BlockEntity implements BlockEntityClie
 
     @Override
     public Text getDisplayName() {
-        return new TranslatableText(getCachedState().getBlock().getTranslationKey());
+        return Text.literal(getCachedState().getBlock().getTranslationKey());
     }
 
+    @Nullable
     @Override
-    public void fromClientTag(NbtCompound tag) {
-        readNbt(tag);
+    public Packet<ClientPlayPacketListener> toUpdatePacket() {
+        return BlockEntityUpdateS2CPacket.create(this);
     }
 
-    @Override
-    public NbtCompound toClientTag(NbtCompound tag) {
-        return writeNbt(tag);
+    public NbtCompound toInitialChunkDataNbt() {
+        var nbt = new NbtCompound();
+        writeNbt(nbt);
+        return nbt;
     }
 
     @Override

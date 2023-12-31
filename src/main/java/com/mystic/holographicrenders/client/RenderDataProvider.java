@@ -1,7 +1,5 @@
 package com.mystic.holographicrenders.client;
 
-import com.glisco.worldmesher.WorldMesh;
-import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -11,27 +9,17 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import com.mystic.holographicrenders.gui.Textures;
-import com.mystic.holographicrenders.item.WidgetType;
-import com.teamwizardry.librarianlib.core.util.Client;
-import com.teamwizardry.librarianlib.facade.FacadeScreen;
-import com.teamwizardry.librarianlib.facade.FacadeWidget;
-import com.teamwizardry.librarianlib.facade.layer.GuiLayer;
-import com.teamwizardry.librarianlib.facade.layer.GuiLayerEvents;
-import com.teamwizardry.librarianlib.facade.layers.SpriteLayer;
-import com.teamwizardry.librarianlib.facade.layers.text.TextFit;
-import com.teamwizardry.librarianlib.facade.pastry.layers.PastryLabel;
-import com.teamwizardry.librarianlib.math.Matrix4d;
-import com.teamwizardry.librarianlib.mosaic.Sprite;
+import io.wispforest.worldmesher.WorldMesh;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.render.model.json.ModelTransformation;
+import net.minecraft.client.render.model.json.ModelTransformationMode;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
@@ -42,14 +30,13 @@ import net.minecraft.item.FilledMapItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.map.MapState;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.LiteralText;
+import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3f;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.util.math.RotationAxis;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -68,8 +55,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.teamwizardry.librarianlib.core.util.Shorthand.vec;
-import static net.minecraft.client.gui.hud.BackgroundHelper.ColorMixer.*;
+import static net.minecraft.util.math.ColorHelper.Abgr.*;
 
 /**
  * @param <T>
@@ -104,7 +90,6 @@ public abstract class RenderDataProvider<T> {
             Identifier id = new Identifier("missingno");
             return new TextureProvider(id, new RegularSprite(id, 16,16));
         });
-        RenderDataProviderRegistry.register(WidgetProvider.ID, () -> new WidgetProvider(WidgetType.Blank, BlockPos.ORIGIN));
         RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(-1));
     }
 
@@ -132,9 +117,9 @@ public abstract class RenderDataProvider<T> {
 
             matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
             //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
-            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
 
-            MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformation.Mode.GROUND, light, overlay, matrices, immediate, 0);
+//            MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformationMode.GROUND, light, overlay, matrices, immediate.getBuffer(RenderLayer.getSolid()), null, 0); //TODO: FIX
         }
 
         @Override
@@ -176,7 +161,7 @@ public abstract class RenderDataProvider<T> {
             matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
-            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
 
             matrices.translate(-0.5, 0, -0.5);
 
@@ -186,13 +171,13 @@ public abstract class RenderDataProvider<T> {
         @Override
         public NbtCompound write(ProjectorBlockEntity be) {
             final NbtCompound tag = new NbtCompound();
-            tag.putString("BlockId", Registry.BLOCK.getId(data.getBlock()).toString());
+            tag.putString("BlockId", Registries.BLOCK.getId(data.getBlock()).toString());
             return tag;
         }
 
         @Override
         public void read(NbtCompound tag, ProjectorBlockEntity be) {
-            data = Registry.BLOCK.getOrEmpty(Identifier.tryParse(tag.getString("BlockId"))).orElse(Blocks.AIR).getDefaultState();
+            data = Registries.BLOCK.getOrEmpty(Identifier.tryParse(tag.getString("BlockId"))).orElse(Blocks.AIR).getDefaultState();
         }
 
         @Override
@@ -224,7 +209,7 @@ public abstract class RenderDataProvider<T> {
             if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
 
             matrices.translate(0.5, 0.75, 0.5);
-            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d)));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
             matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
             final EntityRenderDispatcher entityRenderDispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
@@ -273,10 +258,10 @@ public abstract class RenderDataProvider<T> {
 
         @Override
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-            drawText(matrices, be, 0, data);
+            drawText(matrices, be, 0, data, immediate);
         }
 
-        public static void drawText(MatrixStack matrices, BlockEntity be, int color, Text text) {
+        public static void drawText(MatrixStack matrices, BlockEntity be, int color, Text text, VertexConsumerProvider.Immediate immediate) {
             matrices.translate(0.5, 0.0, 0.5);
 
             PlayerEntity player = MinecraftClient.getInstance().player;
@@ -287,32 +272,32 @@ public abstract class RenderDataProvider<T> {
                 double side2;
 
                 switch (facing.getAxis()) {
-                    case X:
+                    case X -> {
                         side1 = player.getY() - be.getPos().getY() - 0.5;
                         side2 = player.getZ() - be.getPos().getZ() - 0.5;
-                        break;
-                    case Z:
+                    }
+                    case Z -> {
                         side1 = player.getX() - be.getPos().getX() - 0.5;
                         side2 = player.getY() - be.getPos().getY() - 0.5;
-                        break;
-                    default:
+                    }
+                    default -> {
                         side1 = player.getX() - be.getPos().getX() - 0.5;
                         side2 = player.getZ() - be.getPos().getZ() - 0.5;
-                        break;
+                    }
                 }
 
                 float rot = (float) MathHelper.atan2(side2, side1);
                 rot *= facing == Direction.UP ? -1 : 1;
                 rot *= facing.getAxis() == Direction.Axis.Z ? facing.getOffsetZ() : 1;
                 rot *= facing.getAxis() == Direction.Axis.X ? facing.getOffsetX() : 1;
-                matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(rot));
-                matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90 * (facing == Direction.EAST ? -1 : 1)));
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotation(rot));
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(90 * (facing == Direction.EAST ? -1 : 1)));
             }
 
             matrices.scale(0.05f, -0.05f, 0.05f); //TODO make this usable with scaling sliders
             matrices.translate(-(MinecraftClient.getInstance().textRenderer.getWidth(text) / 2f), -20, 0); //TODO make this usable with translation sliders
 
-            MinecraftClient.getInstance().textRenderer.draw(matrices, text, 0, 0, color);
+//            MinecraftClient.getInstance().textRenderer.draw(matrices, text, 0, 0, color); //TODO; fix this
         }
 
         @Override
@@ -376,10 +361,10 @@ public abstract class RenderDataProvider<T> {
                 matrices.scale(0.5f, 0.5f, 0.5f);
                 matrices.translate(-0.5, 0, -0.5);
                 matrices.translate(0, 0.65, 0);
-                TextProvider.drawText(matrices, be, 0, Text.of("§b[§aScanning§b]"));
+                TextProvider.drawText(matrices, be, 0, Text.of("§b[§aScanning§b]"), immediate);
             } else {
                 matrices.translate(0.5, 0.5, 0.5);
-                matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
                 matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
 
                 int xSize = 1 + Math.max(data.getLeft().getX(), data.getRight().getX()) - Math.min(data.getLeft().getX(), data.getRight().getX());
@@ -477,14 +462,14 @@ public abstract class RenderDataProvider<T> {
             double z = player.getZ() - be.getPos().getZ() - 0.5;
             float rot = (float) MathHelper.atan2(z, x);
 
-            matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
-            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotation(-rot));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(90));
 
             matrices.translate(-7.5, 0, 0);
 
-            Matrix4d matrix = new Matrix4d(matrices.peek().getModel());
+            var matrix = matrices.peek().getPositionMatrix();
 
-            sprite.draw(matrix, 0,0, 16,16, (int) ((Client.getTime().getTime() * 50) % sprite.getFrameCount()), Color.WHITE);
+            sprite.render(matrix, 0,0, 16,16, (int) ((MinecraftClient.getInstance().world.getTime() + tickDelta) * 50) % sprite.getFrameCount(), Color.WHITE);
 
             RenderSystem.enableDepthTest();
             matrices.pop();
@@ -495,6 +480,7 @@ public abstract class RenderDataProvider<T> {
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
             Sprite sprite = null;
+
             NativeImage image = null;
 
             String type = conn.getContentType();
@@ -665,8 +651,8 @@ public abstract class RenderDataProvider<T> {
             double z = player.getZ() - be.getPos().getZ() - 0.5;
             float rot = (float) MathHelper.atan2(z, x);
 
-            matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
-            matrices.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(90));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotation(-rot));
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(90));
 
             matrices.translate(-7.5, 0, 0);
 
@@ -691,129 +677,6 @@ public abstract class RenderDataProvider<T> {
         protected void read(NbtCompound tag, ProjectorBlockEntity be) {
             this.data = tag.getInt("Id");
         }
-
-        @Override
-        public Identifier getTypeId() {
-            return ID;
-        }
-    }
-
-    public static class WidgetProvider extends RenderDataProvider<Pair<WidgetType, BlockPos>> {
-        private static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "widget");
-
-        private FacadeWidget widget;
-
-        private GuiLayer root;
-
-        private FacadeWidget createWidget(WidgetType type, BlockPos pos) {
-            FacadeScreen screen = new FacadeScreen(LiteralText.EMPTY);
-            FacadeWidget widget = screen.getFacade();
-            widget.getRoot().add(root = new GuiLayer());
-
-            switch (type) {
-                case Blank: {
-                    root.setSize(vec(200, 200));
-                    root.add(new SpriteLayer(Textures.projector, 0, 0, 200, 200));
-                    break;
-                }
-                case Clock: {
-                    SpriteLayer background = new SpriteLayer(Textures.textfield, 0, 0, 100, 100);
-                    PastryLabel clock = new PastryLabel(0,0, "Avacado");
-                    clock.setColor(Color.WHITE);
-                    root.setScale(0.5);
-                    background.add(clock);
-                    background.hook(GuiLayerEvents.Update.class, event -> {
-                        float time = Client.getWorldTime().getTime();
-
-                        int hour = (int) (time / 1000f);
-
-                        int minutes = (int) ((time % 1000f /1000f) * 60);
-
-                        clock.setText(Strings.padStart("" + hour, 2, '0') + ":" + Strings.padStart("" + minutes, 2, '0'));
-                        clock.fitToText(TextFit.BOTH);
-                        background.setSize(clock.getSize());
-                        background.setX(background.getWidth()/2);
-                        root.setSize(background.getSize());
-                    });
-
-                    root.add(background);
-                    break;
-                }
-            }
-
-            widget.getRoot().hook(GuiLayerEvents.LayoutChildren.class, event -> {
-                root.setPos(vec(-root.getWidth()/2, root.getHeight()));
-            });
-
-            return widget;
-        }
-
-            private static final LoadingCache<Pair<WidgetType, BlockPos>, WidgetProvider> cache = CacheBuilder.newBuilder()
-                    .maximumSize(20)
-                    .expireAfterAccess(20, TimeUnit.SECONDS)
-                    .build(new CacheLoader<Pair<WidgetType, BlockPos>, WidgetProvider>() {
-                        @Override
-                        public WidgetProvider load(Pair<WidgetType, BlockPos> key) {
-                            return new WidgetProvider(key.getKey(), key.getValue());
-                        }
-                    });
-
-
-        public WidgetProvider(WidgetType type, BlockPos pos) {
-            super(Pair.of(type, pos));
-            widget = createWidget(type, pos);
-        }
-
-        public static WidgetProvider of(WidgetType widget, BlockPos pos) throws ExecutionException {
-            return cache.get(Pair.of(widget, pos));
-        }
-
-        @Override
-        public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
-            RenderSystem.enableDepthTest();
-
-            matrices.push();
-
-            float height = root.getHeightf();
-            float width = root.getHeightf();
-
-            matrices.translate(0.5,1,0.5);
-
-            PlayerEntity player = MinecraftClient.getInstance().player;
-            double x = player.getX() - be.getPos().getX() - 0.5;
-            double z = player.getZ() - be.getPos().getZ() - 0.5;
-            float rot = (float) MathHelper.atan2(z, x);
-
-            matrices.multiply(Vec3f.POSITIVE_Y.getRadialQuaternion(-rot));
-            matrices.multiply(Vec3f.NEGATIVE_Y.getDegreesQuaternion(90));
-
-            matrices.translate(0, 0.5,0);
-
-            matrices.scale(-1/width, -1/height, 1f);
-
-            matrices.translate(0, -height,0);
-
-            widget.update();
-            widget.render(matrices);
-
-            matrices.pop();
-
-            RenderSystem.disableDepthTest();
-        }
-
-        @Override
-        protected NbtCompound write(ProjectorBlockEntity be) {
-            final NbtCompound tag = new NbtCompound();
-            tag.putLong("Pos", data.getValue().asLong());
-            tag.putInt("Widget", data.getKey().ordinal());
-            return tag;
-        }
-
-        @Override
-        protected void read(NbtCompound tag, ProjectorBlockEntity be) {
-            this.data = Pair.of(WidgetType.fromId(tag.getInt("Widget")), BlockPos.fromLong(tag.getLong("Pos")));
-        }
-
 
         @Override
         public Identifier getTypeId() {

@@ -12,9 +12,12 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextContent;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.*;
 import net.minecraft.util.registry.Registry;
@@ -31,7 +34,7 @@ public class EntityScannerItem extends Item {
 
     @Nullable
     public EntityType<?> getEntityType(ItemStack stack){
-        return Registry.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stack.getOrCreateNbt().getCompound("Entity").getString("id"))).orElse(null);
+        return Registries.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stack.getOrCreateNbt().getCompound("Entity").getString("id"))).orElse(null);
     }
 
     @Override
@@ -45,7 +48,7 @@ public class EntityScannerItem extends Item {
 
         stackTag.put("Entity", entityTag);
 
-        return ActionResult.success(user.world.isClient);
+        return ActionResult.success(user.getWorld().isClient);
     }
 
     @Override
@@ -66,11 +69,11 @@ public class EntityScannerItem extends Item {
         NbtCompound stackTag = stack.getOrCreateNbt();
 
         if (stackTag.contains("Entity")) {
-            Registry.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stackTag.getCompound("Entity").getString("id"))).ifPresent(entityType -> {
-                tooltip.add(new LiteralText("§7Entity: ").append(new TranslatableText(entityType.getTranslationKey()).formatted(Formatting.AQUA)));
+            Registries.ENTITY_TYPE.getOrEmpty(Identifier.tryParse(stackTag.getCompound("Entity").getString("id"))).ifPresent(entityType -> {
+                tooltip.add(Text.literal("§7Entity: ").append(Text.of(entityType.getTranslationKey())).formatted(Formatting.AQUA));
             });
         } else {
-            tooltip.add(new LiteralText("§7Blank"));
+            tooltip.add(Text.literal("§7Blank"));
         }
     }
 }

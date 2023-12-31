@@ -13,11 +13,10 @@ import com.mystic.holographicrenders.network.ProjectorScreenPacket;
 import io.netty.buffer.ByteBufUtil;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.client.itemgroup.FabricItemGroupBuilder;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
+import net.fabricmc.fabric.impl.itemgroup.FabricItemGroup;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
@@ -28,17 +27,18 @@ import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 
 public class HolographicRenders implements ModInitializer {
 
     public static final String MOD_ID = "holographic_renders";
 
-    public static final ItemGroup HOLOGRAPHIC_RENDERS_CREATIVE_TAB = FabricItemGroupBuilder.create(new Identifier(MOD_ID, "general")).icon(() -> new ItemStack(HolographicRenders.PROJECTOR_BLOCK)).build().setName("holographic_renders:textures/gui/hologram_tab.png");
+    public static final ItemGroup HOLOGRAPHIC_RENDERS_CREATIVE_TAB = FabricItemGroup.create(new Identifier(MOD_ID, "general")).icon(() -> new ItemStack(HolographicRenders.PROJECTOR_BLOCK)).build().setName("holographic_renders:textures/gui/hologram_tab.png");
 
     public static final Item AREA_SCANNER = new AreaScannerItem();
     public static final Item TEXTURE_SCANNER = new TextureScannerItem();
@@ -60,14 +60,14 @@ public class HolographicRenders implements ModInitializer {
     @Override
     public void onInitialize() {
 
-        Registry.register(Registry.BLOCK, PROJECTOR_ID, PROJECTOR_BLOCK);
-        Registry.register(Registry.ITEM, PROJECTOR_ID, PROJECTOR_ITEM);
-        Registry.register(Registry.BLOCK_ENTITY_TYPE, PROJECTOR_ID, PROJECTOR_BLOCK_ENTITY);
+        Registry.register(Registries.BLOCK, PROJECTOR_ID, PROJECTOR_BLOCK);
+        Registry.register(Registries.ITEM, PROJECTOR_ID, PROJECTOR_ITEM);
+        Registry.register(Registries.BLOCK_ENTITY_TYPE, PROJECTOR_ID, PROJECTOR_BLOCK_ENTITY);
 
-        Registry.register(Registry.ITEM, new Identifier(MOD_ID, "area_scanner"), AREA_SCANNER);
-        Registry.register(Registry.ITEM, new Identifier(MOD_ID, "texture_scanner"), TEXTURE_SCANNER);
-        Registry.register(Registry.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
-        Registry.register(Registry.ITEM, new Identifier(MOD_ID, "widget_scanner"), WIDGET_SCANNER);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "area_scanner"), AREA_SCANNER);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "texture_scanner"), TEXTURE_SCANNER);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
+        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "widget_scanner"), WIDGET_SCANNER);
 
         ServerPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.ACTION_REQUEST_ID, ProjectorScreenPacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
@@ -101,7 +101,7 @@ public class HolographicRenders implements ModInitializer {
             BlockPos pos = buf.readBlockPos();
             boolean lights = buf.readBoolean();
             server.execute(() -> {
-                BlockEntity blockEntity = player.world.getBlockEntity(pos);
+                BlockEntity blockEntity = player.getWorld().getBlockEntity(pos);
                 if(blockEntity instanceof ProjectorBlockEntity){
                     ((ProjectorBlockEntity) blockEntity).setLightEnabled(lights);
                 }
