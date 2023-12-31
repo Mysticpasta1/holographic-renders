@@ -12,11 +12,9 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendereregistry.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
-
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
@@ -41,7 +39,7 @@ public class HolographicRendersClient implements ClientModInitializer {
                 }
             });
         });
-        Common.textScreenRunnable = (hand -> MinecraftClient.getInstance().setScreen(new TextboxScreen(hand)));
-        Common.widgetScreenRunnable = (hand ->  MinecraftClient.getInstance().setScreen(new WidgetScreen(hand)));
+        Common.textScreenRunnable = (hand -> MinecraftClient.getInstance().setScreen(new TextboxScreen(new TextboxScreenRoot(hand))));
+        Common.widgetScreenRunnable = (hand ->  MinecraftClient.getInstance().setScreen(new WidgetScreen(new WidgetScreenRoot(hand), hand)));
     }
 }

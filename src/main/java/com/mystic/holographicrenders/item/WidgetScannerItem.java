@@ -11,7 +11,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
@@ -21,7 +20,7 @@ import net.minecraft.world.World;
 public class WidgetScannerItem extends Item {
 
     public WidgetScannerItem() {
-        super(new Settings().maxCount(1).group(HolographicRenders.HOLOGRAPHIC_RENDERS_CREATIVE_TAB));
+        super(new Settings().maxCount(1));
     }
 
     @Override
@@ -40,9 +39,9 @@ public class WidgetScannerItem extends Item {
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         NbtCompound tag = stack.getOrCreateNbt();
         if(tag.contains("Widget")) {
-            tooltip.add(new LiteralText("Widget: ").formatted(Formatting.GREEN).append(new LiteralText(WidgetType.fromId(tag.getInt("Widget")).toString()).formatted(Formatting.YELLOW)));
+            tooltip.add(Text.literal("Widget: ").formatted(Formatting.GREEN).append(Text.literal(WidgetType.fromId(tag.getInt("Widget")).toString()).formatted(Formatting.YELLOW)));
         } else {
-            tooltip.add(new LiteralText("Empty"));
+            tooltip.add(Text.literal("Empty"));
         }
     }
 }

@@ -423,7 +423,7 @@ public abstract class RenderDataProvider<T> {
                 .maximumSize(20)
                 .expireAfterAccess(20, TimeUnit.SECONDS)
                 .removalListener((RemovalListener<String, TextureProvider>) notification -> MinecraftClient.getInstance().getTextureManager().destroyTexture(notification.getValue().data))
-                .build(new CacheLoader<String, TextureProvider>() {
+                .build(new CacheLoader<>() {
                     @Override
                     public TextureProvider load(String key) {
                         try {
@@ -434,7 +434,7 @@ public abstract class RenderDataProvider<T> {
 
                             Identifier id = new Identifier("missingno");
 
-                            return new TextureProvider(id, new RegularSprite(id, 16,16));
+                            return new TextureProvider(id, new RegularSprite(id, 16, 16));
                         }
                     }
                 });

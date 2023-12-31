@@ -10,7 +10,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Matrix4f;
+import org.joml.Matrix4f;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class WorldRendererMixin {
 
     @Inject(method = "render", at = @At(value = "FIELD", target = "Lnet/minecraft/client/MinecraftClient;crosshairTarget:Lnet/minecraft/util/hit/HitResult;", opcode = Opcodes.GETFIELD, ordinal = 1))
-    public void drawAreaSelection(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f matrix4f, CallbackInfo ci) {
+    public void drawAreaSelection(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f projectionMatrix, CallbackInfo ci) {
         final MinecraftClient client = MinecraftClient.getInstance();
         final ClientPlayerEntity player = client.player;
         if (player.getMainHandStack().getItem() != HolographicRenders.AREA_SCANNER) return;
@@ -33,7 +33,7 @@ public class WorldRendererMixin {
         BlockPos origin = BlockPos.fromLong(tag.getLong("Pos1"));
 
         HitResult result = player.raycast(player.getAbilities().creativeMode ? 5.0F : 4.5F, 0, false);
-        BlockPos size = tag.contains("Pos2") ? BlockPos.fromLong(tag.getLong("Pos2")) : (result instanceof BlockHitResult ? ((BlockHitResult) result).getBlockPos() : new BlockPos(result.getPos()));
+        BlockPos size = tag.contains("Pos2") ? BlockPos.fromLong(tag.getLong("Pos2")) : (result instanceof BlockHitResult ? ((BlockHitResult) result).getBlockPos() : new BlockPos((int) result.getPos().x, (int) result.getPos().y, (int) result.getPos().z));
         size = size.subtract(origin);
 
         origin = origin.add(size.getX() < 0 ? 1 : 0, size.getY() < 0 ? 1 : 0, size.getZ() < 0 ? 1 : 0);

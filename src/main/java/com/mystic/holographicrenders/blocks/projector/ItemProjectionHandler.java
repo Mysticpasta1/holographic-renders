@@ -58,13 +58,13 @@ public class ItemProjectionHandler {
             }
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.WIDGET_SCANNER, (be, stack) -> {
-            try {
-                return RenderDataProvider.WidgetProvider.of(WidgetType.fromId(be.getStack(0).getOrCreateNbt().getInt("Widget")), be.getPos());
-            } catch (ExecutionException e) {
-                return RenderDataProvider.EmptyProvider.INSTANCE;
-            }
-        });
+ //     registerBehaviour(stack -> stack.getItem() == HolographicRenders.WIDGET_SCANNER, (be, stack) -> {
+ //         try {
+ //             return RenderDataProvider.WidgetProvider.of(WidgetType.fromId(be.getStack(0).getOrCreateNbt().getInt("Widget")), be.getPos());
+ //         } catch (ExecutionException e) {
+ //             return RenderDataProvider.EmptyProvider.INSTANCE;
+ //         }
+ //     });
 
         registerBehaviour(itemStack -> itemStack.getItem() == Items.FILLED_MAP, (be, stack) -> {
             return RenderDataProvider.MapProvider.of(FilledMapItem.getMapId(stack));

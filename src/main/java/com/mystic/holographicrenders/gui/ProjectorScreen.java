@@ -1,63 +1,80 @@
 package com.mystic.holographicrenders.gui;
 
-import static com.teamwizardry.librarianlib.core.util.Shorthand.vec;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.network.ProjectorScreenPacket;
-import com.teamwizardry.librarianlib.facade.container.FacadeView;
-import com.teamwizardry.librarianlib.facade.layers.SpriteLayer;
-import com.teamwizardry.librarianlib.facade.layers.TextLayer;
-import com.teamwizardry.librarianlib.facade.layers.text.TextFit;
-import com.teamwizardry.librarianlib.facade.pastry.layers.PastryCheckbox;
-import com.teamwizardry.librarianlib.facade.pastry.layers.PastryToggle;
-import com.teamwizardry.librarianlib.mosaic.Mosaic;
-import com.teamwizardry.librarianlib.mosaic.MosaicSprite;
-import ll.dev.thecodewarrior.bitfont.typesetting.TextLayoutManager;
-
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Language;
 
 import java.util.function.Consumer;
 
-public class ProjectorScreen extends FacadeView<ProjectorScreenHandler> {
-    private static final MosaicSprite TEXTURE = new Mosaic(new Identifier("holographic_renders", "textures/gui_hologram_projector.png"), 256,256).getSprite("main");
+public class ProjectorScreen extends HandledScreen<ProjectorScreenHandler> {
+    private static final Identifier TEXTURE = new Identifier("holographic_renders", "textures/gui_hologram_projector.png");
 
     private boolean lightsEnabled = false;
 
     public ProjectorScreen(ProjectorScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
-        getMain().setSize(vec(Textures.main.getWidth(), Textures.main.getHeight()));
+    }
 
-        SpriteLayer sprite = new SpriteLayer(Textures.main);
-        TextLayer text = new TextLayer(128, 7, Language.getInstance().get("block.holographic_renders.projector"));
-        text.fitToText(TextFit.BOTH);
-        text.setTextAlignment(TextLayoutManager.Alignment.LEFT);
-        sprite.add(text);
+    @Override
+    protected void drawBackground(DrawContext matrices, float delta, int mouseX, int mouseY) {
+        RenderSystem.setShaderFogColor(1.0F, 1.0F, 1.0F, 1.0F);
+        client.getTextureManager().bindTexture(TEXTURE);
+        int x = (width - backgroundWidth) / 2;
+        int y = (height - backgroundHeight) / 2;
+        matrices.drawTexture(TEXTURE, x, y, 0, 0, backgroundWidth, backgroundHeight);
+    }
 
-        PastryCheckbox checkbox = new PastryCheckbox(110, 39, false);
-        checkbox.BUS.hook(PastryToggle.StateWillChangeEvent.class, event -> client.getNetworkHandler().sendPacket(ProjectorScreenPacket.createLightAction(event.getNewState())));
-        TextLayer light = new TextLayer(8, -1,"Light");
-        light.fitToText(TextFit.BOTH);
-        light.setTextAlignment(TextLayoutManager.Alignment.LEFT);
-        checkbox.add(light);
-        checkbox.setState(handler.getLight());
+    @Override
+    public void render(DrawContext matrices, int mouseX, int mouseY, float delta) {
+        renderBackground(matrices);
+        super.render(matrices, mouseX, mouseY, delta);
+        drawMouseoverTooltip(matrices, mouseX, mouseY);
+    }
 
-        getMain().add(sprite);
-        getMain().add(checkbox);
+    @Override
+    protected void init() {
+        super.init();
+        // Center the title
+        titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
 
-        getMain().onLayout(() -> {
-            text.setX(getMain().getWidth() * 0.5 - text.getWidth() * 0.5);
+        int x = (width - backgroundWidth) / 2;
+        int y = (height - backgroundHeight) / 2;
+
+        CheckboxWidget lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Text.of("Light"), lightsEnabled, aBoolean -> {
+            client.getNetworkHandler().sendPacket(ProjectorScreenPacket.createLightAction(aBoolean));
         });
+        addDrawable(lightCheckbox);
+
     }
 
     public void setLights(boolean lightsEnabled) {
         this.lightsEnabled = lightsEnabled;
+        reload();
+    }
+
+    private void reload() {
+        this.init(MinecraftClient.getInstance(), this.width, this.height);
+    }
+
+    protected static class CallbackCheckboxWidget extends CheckboxWidget {
+
+        private final Consumer<Boolean> changeCallback;
+
+        public CallbackCheckboxWidget(int x, int y, Text message, boolean checked, Consumer<Boolean> changeCallback) {
+            super(x, y, 20, 20, message, checked);
+            this.changeCallback = changeCallback;
+        }
+
+        @Override
+        public void onPress() {
+            super.onPress();
+            changeCallback.accept(isChecked());
+        }
     }
 }

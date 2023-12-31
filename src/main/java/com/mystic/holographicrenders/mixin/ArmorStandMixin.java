@@ -1,9 +1,7 @@
 package com.mystic.holographicrenders.mixin;
 
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.item.EntityScannerItem;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -14,6 +12,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -23,7 +22,8 @@ public abstract class ArmorStandMixin {
 
     @Shadow public abstract boolean isMarker();
 
-    @Shadow protected abstract EquipmentSlot slotFromPosition(Vec3d vec3d);
+    @Unique
+    protected abstract EquipmentSlot slotFromPosition(Vec3d vec3d);
 
     @Shadow protected abstract boolean isSlotDisabled(EquipmentSlot slot);
 
@@ -40,7 +40,7 @@ public abstract class ArmorStandMixin {
             if (!this.isMarker() && itemStack.getItem() != Items.NAME_TAG) {
                 if (player.isSpectator()) {
                  cir.setReturnValue(ActionResult.SUCCESS);
-                } else if (player.world.isClient) {
+                } else if (player.getWorld().isClient) {
                     cir.setReturnValue(ActionResult.CONSUME);
                 } else {
                     EquipmentSlot equipmentSlot = MobEntity.getPreferredEquipmentSlot(itemStack);

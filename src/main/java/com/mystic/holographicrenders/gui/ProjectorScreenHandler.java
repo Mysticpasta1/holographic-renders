@@ -32,7 +32,7 @@ public class ProjectorScreenHandler extends ScreenHandler {
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buffer) {
         super(HolographicRenders.PROJECTOR_SCREEN_HANDLER, syncId);
-        this.blockEntity = (ProjectorBlockEntity) playerInventory.player.world.getBlockEntity(buffer.readBlockPos());
+        this.blockEntity = (ProjectorBlockEntity) playerInventory.player.getWorld().getBlockEntity(buffer.readBlockPos());
 
         this.addSlot(new Slot(blockEntity, 0, 80 + 3, 35 + 3));
 
@@ -47,6 +47,28 @@ public class ProjectorScreenHandler extends ScreenHandler {
         for (int m = 0; m < 9; ++m) {
             this.addSlot(new Slot(playerInventory, m, 8 + 3 + m * 18, 142 + 3));
         }
+    }
+
+    @Override
+    public ItemStack quickMove(PlayerEntity player, int invSlot) {
+        ItemStack newStack = ItemStack.EMPTY;
+        Slot slot = this.slots.get(invSlot);
+
+        if (slot != null && slot.hasStack()) {
+            ItemStack originalStack = slot.getStack();
+            newStack = originalStack.copy();
+
+            if (invSlot < blockEntity.size()) {
+                if (!this.insertItem(originalStack, blockEntity.size(), this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (!this.insertItem(originalStack, 0, blockEntity.size(), false)) {
+                return ItemStack.EMPTY;
+            }
+            slot.markDirty();
+        }
+
+        return newStack;
     }
 
     @Override
@@ -69,26 +91,4 @@ public class ProjectorScreenHandler extends ScreenHandler {
         }
     }
 
-    // Shift + Player Inv Slot
-    @Override
-    public ItemStack transferSlot(PlayerEntity player, int invSlot) {
-        ItemStack newStack = ItemStack.EMPTY;
-        Slot slot = this.slots.get(invSlot);
-
-        if (slot != null && slot.hasStack()) {
-            ItemStack originalStack = slot.getStack();
-            newStack = originalStack.copy();
-
-            if (invSlot < blockEntity.size()) {
-                if (!this.insertItem(originalStack, blockEntity.size(), this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (!this.insertItem(originalStack, 0, blockEntity.size(), false)) {
-                return ItemStack.EMPTY;
-            }
-            slot.markDirty();
-        }
-
-        return newStack;
-    }
 }

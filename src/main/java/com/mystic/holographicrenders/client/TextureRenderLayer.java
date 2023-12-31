@@ -1,20 +1,18 @@
 package com.mystic.holographicrenders.client;
 
-import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.mixin.VertexConsumerProviderImmediateAccessor;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.render.*;
-import net.minecraft.util.Identifier;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import static net.minecraft.client.render.VertexFormats.*;
+import static net.minecraft.client.render.VertexFormats.POSITION_TEXTURE;
 
 public class TextureRenderLayer extends RenderLayer {
 
