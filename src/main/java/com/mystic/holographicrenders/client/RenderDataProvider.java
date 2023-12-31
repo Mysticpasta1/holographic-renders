@@ -119,7 +119,7 @@ public abstract class RenderDataProvider<T> {
             //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
             matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
 
-//            MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformationMode.GROUND, light, overlay, matrices, immediate.getBuffer(RenderLayer.getSolid()), null, 0); //TODO: FIX
+            MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformationMode.GROUND, light, overlay, matrices, immediate, null, 0); //TODO: FIX
         }
 
         @Override
@@ -351,7 +351,7 @@ public abstract class RenderDataProvider<T> {
         @Environment(EnvType.CLIENT)
         public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-            if (client.world.getTime() - lastUpdateTick > 1200) {
+            if (client.world.getTime() - lastUpdateTick > 160) {
                 lastUpdateTick = client.world.getTime();
                 mesh.scheduleRebuild();
             }
