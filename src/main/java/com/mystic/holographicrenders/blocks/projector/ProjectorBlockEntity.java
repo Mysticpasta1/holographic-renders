@@ -1,6 +1,7 @@
 package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import com.mystic.holographicrenders.client.EmptyProvider;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
@@ -31,7 +32,7 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
     private float alpha = 1;
     private boolean lightEnabled = true;
-    private  RenderDataProvider<?> renderer = RenderDataProvider.EmptyProvider.INSTANCE;
+    private  RenderDataProvider<?> renderer = EmptyProvider.INSTANCE;
 
 
     public @NotNull RenderDataProvider<?> getRenderer() {
@@ -75,7 +76,7 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
-        renderer = providerId == null ? RenderDataProvider.EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
+        renderer = providerId == null ? EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
         renderer.fromTag(tag, this);
         inventory.set(0, ItemStack.fromNbt(tag.getCompound("Stack")));
     }

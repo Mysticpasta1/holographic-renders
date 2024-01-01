@@ -49,7 +49,7 @@ public class ProjectorScreen extends HandledScreen<ProjectorScreenHandler> {
         CheckboxWidget lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Text.of("Light"), lightsEnabled, aBoolean -> {
             client.getNetworkHandler().sendPacket(ProjectorScreenPacket.createLightAction(aBoolean));
         });
-        addDrawable(lightCheckbox);
+        addDrawableChild(lightCheckbox);
 
     }
 

@@ -1,9 +1,8 @@
 package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.client.RenderDataProvider;
+import com.mystic.holographicrenders.client.*;
 import com.mystic.holographicrenders.item.EntityScannerItem;
-import com.mystic.holographicrenders.item.WidgetType;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -25,13 +24,13 @@ public class ItemProjectionHandler {
 
     static {
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
-            if (!stack.getOrCreateNbt().contains("Entity")) return RenderDataProvider.EmptyProvider.INSTANCE;
+            if (!stack.getOrCreateNbt().contains("Entity")) return EmptyProvider.INSTANCE;
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
-            if (type == null) return RenderDataProvider.EmptyProvider.INSTANCE;
+            if (type == null) return EmptyProvider.INSTANCE;
             Entity entity = type.create(be.getWorld());
             entity.readNbt(stack.getOrCreateNbt().getCompound("Entity"));
             entity.updatePosition(be.getPos().getX(), be.getPos().getY(), be.getPos().getZ());
-            return RenderDataProvider.EntityProvider.from(entity);
+            return EntityProvider.from(entity);
         });
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.AREA_SCANNER, (be, stack) -> {
@@ -40,21 +39,21 @@ public class ItemProjectionHandler {
                 BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
                 BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));
                 try {
-                    return RenderDataProvider.AreaProvider.from(pos1, pos2);
+                    return AreaProvider.from(pos1, pos2);
                 } catch (ExecutionException ignored) {
-                    return RenderDataProvider.EmptyProvider.INSTANCE;
+                    return EmptyProvider.INSTANCE;
                 }
             }
 
-            return RenderDataProvider.EmptyProvider.INSTANCE;
+            return EmptyProvider.INSTANCE;
 
         });
 
         registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> {
             try {
-                return RenderDataProvider.TextureProvider.of(be.getStack(0).getOrCreateNbt().getString("URL"));
+                return TextureProvider.of(be.getStack(0).getOrCreateNbt().getString("URL"));
             } catch (ExecutionException e) {
-                return RenderDataProvider.EmptyProvider.INSTANCE;
+                return EmptyProvider.INSTANCE;
             }
         });
 
@@ -67,12 +66,12 @@ public class ItemProjectionHandler {
  //     });
 
         registerBehaviour(itemStack -> itemStack.getItem() == Items.FILLED_MAP, (be, stack) -> {
-            return RenderDataProvider.MapProvider.of(FilledMapItem.getMapId(stack));
+            return MapProvider.of(FilledMapItem.getMapId(stack));
         });
 
-        registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> RenderDataProvider.BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
+        registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
 
-        registerBehaviour(stack -> stack.getItem() == Items.NAME_TAG, (be, stack) -> RenderDataProvider.TextProvider.from(stack.getName()));
+        registerBehaviour(stack -> stack.getItem() == Items.NAME_TAG, (be, stack) -> TextProvider.from(stack.getName()));
     }
 
     /**
@@ -86,7 +85,7 @@ public class ItemProjectionHandler {
     }
 
     /**
-     * Creates a {@link RenderDataProvider} for the given ItemStack or an {@link RenderDataProvider.ItemProvider} if there is no special behaviour registered
+     * Creates a {@link RenderDataProvider} for the given ItemStack or an {@link ItemProvider} if there is no special behaviour registered
      *
      * @param be The {@link ProjectorBlockEntity} the item is in
      * @param stack The {@link ItemStack} that's used to provide data
@@ -97,7 +96,7 @@ public class ItemProjectionHandler {
             if (!entry.getKey().test(stack)) continue;
             return entry.getValue().getProvider(be, stack);
         }
-        return RenderDataProvider.ItemProvider.from(stack);
+        return ItemProvider.from(stack);
     }
 
     /**
