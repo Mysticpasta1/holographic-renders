@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.mixin.VertexConsumerProviderImmediateAccessor;
+import io.wispforest.worldmesher.WorldMesh;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.RenderLayer;
@@ -24,12 +25,14 @@ public class HologramRenderLayer extends RenderLayer {
 
     public static final Runnable beginAction = () -> {
         RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
         RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
         RenderSystem.setShaderColor(1, 1, 1, alpha); //TODO check my math! (redAlpha = 0 = ON), (redAlpha = 15 = OFF) //TODO fix this so only on is doing this at a time!!!
     };
 
     public static final Runnable endAction = () -> {
         RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
     };
 
@@ -51,7 +54,7 @@ public class HologramRenderLayer extends RenderLayer {
         if (in instanceof HologramRenderLayer) {
             return in;
         } else {
-            return remappedTypes.computeIfAbsent(in, original -> new HologramRenderLayer(original));
+            return remappedTypes.computeIfAbsent(in, HologramRenderLayer::new);
         }
     }
 

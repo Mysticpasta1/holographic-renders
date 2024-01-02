@@ -50,6 +50,7 @@ public class MapProvider extends RenderDataProvider<Integer> {
     @Override
     public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
         matrices.push();
+        RenderSystem.enableDepthTest();
         matrices.scale(0.1f, -0.1f, 0.1f);
         matrices.translate(5, -20, 5);
 
@@ -69,7 +70,7 @@ public class MapProvider extends RenderDataProvider<Integer> {
             MinecraftClient.getInstance().gameRenderer.getMapRenderer().draw(matrices, immediate, data, state, false, light);
         }
 
-        RenderSystem.enableDepthTest();
+        RenderSystem.disableDepthTest();
         matrices.pop();
     }
 

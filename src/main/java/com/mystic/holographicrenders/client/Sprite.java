@@ -46,6 +46,7 @@ public interface Sprite {
         BufferBuilder buffer = tessellator.getBuffer();
         Matrix4f model = matrix;
         RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
         RenderSystem.setShaderTexture(0, getTexture());
         RenderSystem.setShaderColor(r, g, b, 1.0f);
         RenderSystem.setShader(GameRenderer::getPositionTexProgram);
@@ -58,6 +59,7 @@ public interface Sprite {
         buffer.vertex(model, x + width, y,          0).texture(u2, v1).next();
         buffer.vertex(model, x,         y,          0).texture(u1, v1).next();
         BufferRenderer.drawWithGlobalProgram(buffer.end());
+        RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
     }
 }

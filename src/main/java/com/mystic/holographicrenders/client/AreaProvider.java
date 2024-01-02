@@ -6,6 +6,8 @@ import com.google.common.cache.LoadingCache;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import io.wispforest.worldmesher.WorldMesh;
+import io.wispforest.worldmesher.mixin.FluidRendererMixin;
+import io.wispforest.worldmesher.renderers.WorldMesherFluidRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.entity.BlockEntity;
@@ -75,16 +77,17 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             int zSize = 1 + Math.max(data.getLeft().getZ(), data.getRight().getZ()) - Math.min(data.getLeft().getZ(), data.getRight().getZ());
 
             matrices.translate(-xSize / 2f, 0, -zSize / 2f); //TODO make this usable with translation sliders
-
             mesh.render(matrices);
         }
     }
 
     @Environment(EnvType.CLIENT)
     public void invalidateCache() {
+        assert MinecraftClient.getInstance().world != null;
         mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight())
                 .renderActions(HologramRenderLayer.beginAction, HologramRenderLayer.endAction)
                 .build();
+        if (mesh.state() == WorldMesh.MeshState.CORRUPT) return;
         rebuild();
     }
 

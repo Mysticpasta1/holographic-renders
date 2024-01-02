@@ -1,5 +1,6 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mystic.holographicrenders.blocks.projector.ItemProjectionHandler;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
@@ -44,8 +45,8 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
 
         if (entity.lightsEnabled()) {
             matrices.push();
-
-            final BufferBuilder buffer = (BufferBuilder) vertexConsumers.getBuffer(RenderLayer.getLightning());
+            RenderSystem.enableDepthTest();
+            final VertexConsumer buffer = vertexConsumers.getBuffer(RenderLayer.getLightning());
             final Matrix4f matrix4f = matrices.peek().getPositionMatrix();
 
             final float r = 0.5f;
@@ -98,7 +99,7 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
             vertex(matrix4f, buffer, -0.25f, topY, 1, r, g, b, 0);
             vertex(matrix4f, buffer, 0.125f, bottomY, 0.9f, r, g, b, startAlpha);
             vertex(matrix4f, buffer, 0.125f, bottomY, 0.1f, r, g, b, startAlpha);
-
+            RenderSystem.disableDepthTest();
             matrices.pop();
         }
 

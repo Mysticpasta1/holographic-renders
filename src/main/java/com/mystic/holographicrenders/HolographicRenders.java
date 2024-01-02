@@ -74,7 +74,7 @@ public class HolographicRenders implements ModInitializer {
     public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER;
 
     static {
-        PROJECTOR_SCREEN_HANDLER = ScreenHandlerRegistry.registerExtended(PROJECTOR_ID, ProjectorScreenHandler::new);
+        PROJECTOR_SCREEN_HANDLER = ScreenHandlerRegistry.registerExtended(new Identifier(MOD_ID, "projector_screen"), ProjectorScreenHandler::new);
     }
 
     @Override

@@ -77,7 +77,7 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
         matrices.push();
         matrices.scale(0.1f, -0.1f, 0.1f);
         matrices.translate(5, -20, 5);
-
+        RenderSystem.enableDepthTest();
         PlayerEntity player = MinecraftClient.getInstance().player;
         double x = player.getX() - be.getPos().getX() - 0.5;
         double z = player.getZ() - be.getPos().getZ() - 0.5;
@@ -90,9 +90,8 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
 
         var matrix = matrices.peek().getPositionMatrix();
 
-        sprite.render(immediate.getBuffer(RenderLayer.getTranslucent()), matrix, 0, 0, 16, 16, (int) ((MinecraftClient.getInstance().world.getTime() + tickDelta) * 50) % sprite.getFrameCount(), Color.WHITE);
-
-        RenderSystem.enableDepthTest();
+        sprite.render(immediate.getBuffer(TextureRenderLayer.getTranslucent()), matrix, 0, 0, 16, 16, (int) ((MinecraftClient.getInstance().world.getTime() + tickDelta) * 50) % sprite.getFrameCount(), Color.WHITE);
+        RenderSystem.disableDepthTest();
         matrices.pop();
     }
 
