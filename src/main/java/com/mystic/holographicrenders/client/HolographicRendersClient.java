@@ -7,7 +7,9 @@ import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import com.mystic.holographicrenders.gui.ProjectorScreen;
 import com.mystic.holographicrenders.gui.TextboxScreen;
 import com.mystic.holographicrenders.gui.WidgetScreen;
-import com.mystic.holographicrenders.network.ProjectorScreenPacket;
+import com.mystic.holographicrenders.network.LightPacket;
+import com.mystic.holographicrenders.network.RotatePacket;
+import com.mystic.holographicrenders.network.SpinPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendereregistry.v1.BlockEntityRendererRegistry;
@@ -28,7 +30,9 @@ public class HolographicRendersClient implements ClientModInitializer {
 
         ScreenRegistry.register(HolographicRenders.PROJECTOR_SCREEN_HANDLER, ProjectorScreen::new);
 
-        ClientPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.UPDATE_ID, ProjectorScreenPacket::onClientUpdate);
+        ClientPlayNetworking.registerGlobalReceiver(LightPacket.UPDATE_ID, LightPacket::onClientUpdate);
+        ClientPlayNetworking.registerGlobalReceiver(SpinPacket.UPDATE_ID, SpinPacket::onClientUpdate);
+        ClientPlayNetworking.registerGlobalReceiver(RotatePacket.UPDATE_ID, RotatePacket::onClientUpdate);
         ClientPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "render_packet"), (client, handler, buf, responseSender) -> {
             ItemStack stack = buf.readItemStack();
             BlockPos pos = buf.readBlockPos();

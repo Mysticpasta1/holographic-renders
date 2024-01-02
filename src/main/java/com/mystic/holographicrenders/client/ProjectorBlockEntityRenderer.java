@@ -43,6 +43,8 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
         matrices.multiply(RotationAxis.NEGATIVE_Z.rotationDegrees(facing.getOffsetX() * 90));
         matrices.translate(-0.5, -0.5, -0.5);
 
+        AreaProvider.setEntity(entity);
+
         if (entity.lightsEnabled()) {
             matrices.push();
             RenderSystem.enableDepthTest();

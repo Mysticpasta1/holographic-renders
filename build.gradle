@@ -16,13 +16,17 @@ repositories {
 	}
 }
 
+loom {
+	accessWidenerPath = file("src/main/resources/holographic_renders.accesswidener")
+}
+
 repositories {
+	mavenCentral()
+	maven { url 'https://jitpack.io' }
 	maven {
 		name = "CottonMC"
 		url = "https://server.bbkr.space/artifactory/libs-release"
 	}
-	maven { url "https://maven.wispforest.io" }
-	maven { url = "https://s01.oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
@@ -34,8 +38,8 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation "io.wispforest:worldmesher:${project.worldmesher_version}"
-	include "io.wispforest:worldmesher:${project.worldmesher_version}"
+	modImplementation "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
+	include "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
 
 	modImplementation include("io.github.cottonmc:LibGui:8.1.0+1.20.1")
 

@@ -1,24 +1,31 @@
 package com.mystic.holographicrenders.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mystic.holographicrenders.network.ProjectorScreenPacket;
+import com.mystic.holographicrenders.network.LightPacket;
+import com.mystic.holographicrenders.network.RotatePacket;
+import com.mystic.holographicrenders.network.SpinPacket;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.CheckboxWidget;
+import net.minecraft.client.gui.widget.SliderWidget;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ProjectorScreen extends HandledScreen<ProjectorScreenHandler> {
     private static final Identifier TEXTURE = new Identifier("holographic_renders", "textures/gui_hologram_projector.png");
 
     private boolean lightsEnabled = false;
+    private boolean spinEnabled;
+    public int rotationInt;
 
-    public ProjectorScreen(ProjectorScreenHandler handler, PlayerInventory inventory, Text title) {
-        super(handler, inventory, title);
+    public ProjectorScreen(ProjectorScreenHandler handler, PlayerInventory inventory, Text text) {
+        super(handler, inventory, Text.literal(""));
     }
 
     @Override
@@ -40,21 +47,39 @@ public class ProjectorScreen extends HandledScreen<ProjectorScreenHandler> {
     @Override
     protected void init() {
         super.init();
-        // Center the title
-        titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
 
         int x = (width - backgroundWidth) / 2;
         int y = (height - backgroundHeight) / 2;
 
-        CheckboxWidget lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Text.of("Light"), lightsEnabled, aBoolean -> {
-            client.getNetworkHandler().sendPacket(ProjectorScreenPacket.createLightAction(aBoolean));
+        CheckboxWidget lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Text.of("Light"), lightsEnabled, light -> {
+            assert client != null;
+            Objects.requireNonNull(client.getNetworkHandler()).sendPacket(LightPacket.createLightAction(light));
         });
+        CheckboxWidget spinCheckbox = new CallbackCheckboxWidget(x + 110, y + 60, Text.of("Spin"), spinEnabled, spin -> {
+            assert client != null;
+            Objects.requireNonNull(client.getNetworkHandler()).sendPacket(SpinPacket.createSpinAction(spin));
+        });
+        SliderWidget rotation = new CallbackSliderWidget(x + 70, y + 6, 100, 20, Text.of("Rotation: " + rotationInt), rotationInt, rotate -> {
+            assert client != null;
+            Objects.requireNonNull(client.getNetworkHandler()).sendPacket(RotatePacket.createRotateAction(rotate));
+        });
+        addDrawableChild(spinCheckbox);
         addDrawableChild(lightCheckbox);
-
+        addDrawableChild(rotation);
     }
 
     public void setLights(boolean lightsEnabled) {
         this.lightsEnabled = lightsEnabled;
+        reload();
+    }
+
+    public void setSpin(boolean setSpin) {
+        this.spinEnabled = setSpin;
+        reload();
+    }
+
+    public void setRotationInt(int setRotationInt) {
+        this.rotationInt = setRotationInt;
         reload();
     }
 
@@ -75,6 +100,24 @@ public class ProjectorScreen extends HandledScreen<ProjectorScreenHandler> {
         public void onPress() {
             super.onPress();
             changeCallback.accept(isChecked());
+        }
+    }
+
+    protected static class CallbackSliderWidget extends SliderWidget {
+
+        private final Consumer<Integer> changeCallback;
+
+        public CallbackSliderWidget(int x, int y, int width, int height, Text text, double value, Consumer<Integer> changeCallback) {
+            super(x, y, width, height, text, value);
+            this.changeCallback = changeCallback;
+        }
+
+        @Override
+        protected void updateMessage() {}
+
+        @Override
+        protected void applyValue() {
+            changeCallback.accept(MathHelper.floor(MathHelper.clampedLerp(0.0, 360.0, this.value)));
         }
     }
 }

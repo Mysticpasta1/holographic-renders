@@ -12,7 +12,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
@@ -21,6 +21,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RotationAxis;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -38,19 +40,26 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
 
     private final MinecraftClient client;
+    private final WorldMesherFluidRenderer worldMesherFluidRenderer;
     private long lastUpdateTick;
     private WorldMesh mesh;
+    private static ProjectorBlockEntity entity;
 
     protected AreaProvider(Pair<BlockPos, BlockPos> data) {
         super(data);
         this.client = MinecraftClient.getInstance();
         //TODO fix this argh
         this.lastUpdateTick = this.client.world.getTime();
+        this.worldMesherFluidRenderer = new WorldMesherFluidRenderer();
         invalidateCache();
     }
 
     public static com.mystic.holographicrenders.client.AreaProvider from(BlockPos start, BlockPos end) throws ExecutionException {
         return cache.get(Pair.of(start, end));
+    }
+
+    public static void setEntity(ProjectorBlockEntity entity) {
+        AreaProvider.entity = entity;
     }
 
     @Override
@@ -69,15 +78,24 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             matrices.translate(0, 0.65, 0);
             TextProvider.drawText(matrices, be, 0, Text.of("§b[§aScanning§b]"), immediate);
         } else {
+            matrices.push();
             matrices.translate(0.5, 0.5, 0.5);
-            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+
+            if(entity.spinEnabled()) {
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+            } else {
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(entity.getRotation()));
+            }
+
             matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
 
-            int xSize = 1 + Math.max(data.getLeft().getX(), data.getRight().getX()) - Math.min(data.getLeft().getX(), data.getRight().getX());
-            int zSize = 1 + Math.max(data.getLeft().getZ(), data.getRight().getZ()) - Math.min(data.getLeft().getZ(), data.getRight().getZ());
+            int xSize = (int) (mesh.dimensions().getXLength() + 1);
+            int zSize = (int) (mesh.dimensions().getZLength() + 1);
 
             matrices.translate(-xSize / 2f, 0, -zSize / 2f); //TODO make this usable with translation sliders
+
             mesh.render(matrices);
+            matrices.pop();
         }
     }
 

@@ -6,7 +6,7 @@
   "name": "Holographic Renders",
   "description": "Takes Isorenders from the Isometric Renders Mod and projects them holographically",
   "authors": [
-    "Mysticpasta1, glisco03"
+    "Mysticpasta1, glisco03, Waterpicker"
   ],
   "contact": {
     "homepage": "",
@@ -30,7 +30,7 @@
   ],
 
   "depends": {
-    "fabricloader": ">=0.15.3",
+    "fabricloader": ">=0.15.0",
     "fabric": "*",
     "minecraft": "1.20.x"
   },

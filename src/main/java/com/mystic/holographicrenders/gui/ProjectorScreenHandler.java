@@ -91,4 +91,34 @@ public class ProjectorScreenHandler extends ScreenHandler {
         }
     }
 
+    public boolean getSpin() {
+        return blockEntity.spinEnabled();
+    }
+
+    public void setSpin(boolean spin) {
+        if (blockEntity.getWorld().isClient) {
+            PacketByteBuf buf = PacketByteBufs.create();
+            buf.writeBlockPos(blockEntity.getPos());
+            buf.writeBoolean(spin);
+            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "spin_packet"), buf);
+        } else {
+            blockEntity.setSpinEnabled(spin);
+        }
+    }
+
+    public int getRotate() {
+        return blockEntity.getRotation();
+    }
+
+    public void setRotate(int rotate) {
+        if (blockEntity.getWorld().isClient) {
+            PacketByteBuf buf = PacketByteBufs.create();
+            buf.writeBlockPos(blockEntity.getPos());
+            buf.writeInt(rotate);
+            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "rotate_packet"), buf);
+        } else {
+            blockEntity.setRotation(rotate);
+        }
+    }
+
 }

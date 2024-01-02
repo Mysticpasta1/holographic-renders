@@ -1,38 +1,23 @@
 package com.mystic.holographicrenders;
 
-import com.mystic.holographicrenders.blocks.projector.ItemProjectionHandler;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlock;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import com.mystic.holographicrenders.client.TextboxScreenRoot;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
-import com.mystic.holographicrenders.item.AreaScannerItem;
-import com.mystic.holographicrenders.item.EntityScannerItem;
-import com.mystic.holographicrenders.item.TextureScannerItem;
-import com.mystic.holographicrenders.item.WidgetScannerItem;
-import com.mystic.holographicrenders.item.WidgetType;
-import com.mystic.holographicrenders.network.ProjectorScreenPacket;
-import io.github.cottonmc.cotton.gui.client.LibGui;
-import io.github.cottonmc.cotton.gui.impl.LibGuiCommon;
-import io.github.cottonmc.cotton.gui.impl.client.ItemUseChecker;
-import io.github.cottonmc.cotton.gui.impl.client.LibGuiClient;
-import io.netty.buffer.ByteBufUtil;
-
+import com.mystic.holographicrenders.item.*;
+import com.mystic.holographicrenders.network.LightPacket;
+import com.mystic.holographicrenders.network.RotatePacket;
+import com.mystic.holographicrenders.network.SpinPacket;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.fabricmc.fabric.api.screenhandler.v1.ScreenHandlerRegistry;
-import net.fabricmc.fabric.impl.itemgroup.FabricItemGroup;
 import net.fabricmc.fabric.impl.itemgroup.FabricItemGroupBuilderImpl;
 import net.minecraft.block.Block;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.inventory.StackReference;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.screen.ScreenHandlerType;
@@ -70,13 +55,8 @@ public class HolographicRenders implements ModInitializer {
     public static final BlockEntityType<ProjectorBlockEntity> PROJECTOR_BLOCK_ENTITY = FabricBlockEntityTypeBuilder.create(ProjectorBlockEntity::new, PROJECTOR_BLOCK).build(null);
 
     public static final Identifier PROJECTOR_ID = new Identifier(MOD_ID, "projector");
-    public static final Identifier TEXTBOX_ID = new Identifier(MOD_ID, "textbox");
-    public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER;
-
-    static {
-        PROJECTOR_SCREEN_HANDLER = ScreenHandlerRegistry.registerExtended(new Identifier(MOD_ID, "projector_screen"), ProjectorScreenHandler::new);
-    }
-
+    public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER = Registry.register(Registries.SCREEN_HANDLER, new Identifier(MOD_ID, "projector_screen"), new ExtendedScreenHandlerType<>(ProjectorScreenHandler::new));
+    
     @Override
     public void onInitialize() {
         Properties props = System.getProperties();
@@ -99,7 +79,9 @@ public class HolographicRenders implements ModInitializer {
 
         Registry.register(Registries.ITEM_GROUP, new Identifier(MOD_ID, "group"), owo);
 
-        ServerPlayNetworking.registerGlobalReceiver(ProjectorScreenPacket.ACTION_REQUEST_ID, ProjectorScreenPacket::onActionRequest);
+        ServerPlayNetworking.registerGlobalReceiver(LightPacket.ACTION_REQUEST_ID, LightPacket::onActionRequest);
+        ServerPlayNetworking.registerGlobalReceiver(SpinPacket.ACTION_REQUEST_ID, SpinPacket::onActionRequest);
+        ServerPlayNetworking.registerGlobalReceiver(RotatePacket.ACTION_REQUEST_ID, RotatePacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
             String url = buf.readString();
             ItemStack stack = player.getStackInHand(buf.readEnumConstant(Hand.class));
@@ -133,6 +115,28 @@ public class HolographicRenders implements ModInitializer {
                 BlockEntity blockEntity = player.getWorld().getBlockEntity(pos);
                 if(blockEntity instanceof ProjectorBlockEntity){
                     ((ProjectorBlockEntity) blockEntity).setLightEnabled(lights);
+                }
+            });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "spin_packet"), (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            boolean spin = buf.readBoolean();
+            server.execute(() -> {
+                BlockEntity blockEntity = player.getWorld().getBlockEntity(pos);
+                if(blockEntity instanceof ProjectorBlockEntity){
+                    ((ProjectorBlockEntity) blockEntity).setSpinEnabled(spin);
+                }
+            });
+        });
+
+        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "rotate_packet"), (server, player, handler, buf, responseSender) -> {
+            BlockPos pos = buf.readBlockPos();
+            int rotation = buf.readInt();
+            server.execute(() -> {
+                BlockEntity blockEntity = player.getWorld().getBlockEntity(pos);
+                if(blockEntity instanceof ProjectorBlockEntity){
+                    ((ProjectorBlockEntity) blockEntity).setRotation(rotation);
                 }
             });
         });

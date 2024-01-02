@@ -32,7 +32,9 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
     private float alpha = 1;
     private boolean lightEnabled = true;
+    private boolean spinEnabled = true;
     private  RenderDataProvider<?> renderer = EmptyProvider.INSTANCE;
+    private int rotation;
 
 
     public @NotNull RenderDataProvider<?> getRenderer() {
@@ -66,8 +68,23 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
         this.markDirty();
     }
 
+    public void setRotation(int rotation) {
+        this.rotation = rotation;
+        this.markDirty();
+    }
+
+    public void setSpinEnabled(boolean shouldSpin) {
+        this.spinEnabled = shouldSpin;
+        this.markDirty();
+    }
+
     public boolean lightsEnabled() {
         return lightEnabled;
+    }
+
+    public int getRotation() {return rotation;}
+    public boolean spinEnabled() {
+        return spinEnabled;
     }
 
     @Override
@@ -75,6 +92,8 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
         super.readNbt(tag);
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
+        spinEnabled = tag.getBoolean("Spin");
+        rotation = tag.getInt("Rotate");
         Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
         renderer.fromTag(tag, this);
@@ -85,6 +104,8 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
     public void writeNbt(NbtCompound tag) {
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
+        tag.putBoolean("Spin", spinEnabled);
+        tag.putInt("Rotate", rotation);
         tag.put("Stack", getItem().writeNbt(new NbtCompound()));
         renderer.toTag(tag, this);
         super.writeNbt(tag);
