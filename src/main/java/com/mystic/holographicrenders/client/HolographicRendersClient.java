@@ -12,10 +12,10 @@ import com.mystic.holographicrenders.network.RotatePacket;
 import com.mystic.holographicrenders.network.SpinPacket;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendereregistry.v1.BlockEntityRendererRegistry;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -24,7 +24,7 @@ public class HolographicRendersClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        BlockEntityRendererRegistry.INSTANCE.register(HolographicRenders.PROJECTOR_BLOCK_ENTITY, ProjectorBlockEntityRenderer::new);
+        BlockEntityRendererFactories.register(HolographicRenders.PROJECTOR_BLOCK_ENTITY, ProjectorBlockEntityRenderer::new);
 
         RenderDataProvider.registerDefaultProviders();
 
