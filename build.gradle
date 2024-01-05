@@ -16,10 +16,6 @@ repositories {
 	}
 }
 
-loom {
-	accessWidenerPath = file("src/main/resources/holographic_renders.accesswidener")
-}
-
 repositories {
 	mavenCentral()
 	maven { url 'https://jitpack.io' }
