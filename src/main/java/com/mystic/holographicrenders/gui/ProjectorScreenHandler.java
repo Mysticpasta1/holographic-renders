@@ -31,7 +31,7 @@ public class ProjectorScreenHandler extends ScreenHandler {
     }
 
     public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buffer) {
-        super(HolographicRenders.PROJECTOR_SCREEN_HANDLER, syncId);
+        super(HolographicRenders.PROJECTOR_SCREEN_HANDLER.get(), syncId);
         this.blockEntity = (ProjectorBlockEntity) playerInventory.player.getWorld().getBlockEntity(buffer.readBlockPos());
 
         this.addSlot(new Slot(blockEntity, 0, 80, 35));

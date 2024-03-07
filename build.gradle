@@ -32,7 +32,7 @@ loom {
         // missing access transformers?
         // don't worry, you can still use them!
         // note that your AT *MUST* be located at
-        // src/main/resources/META-INF/accesstransformer.cfg
+        //accessTransformer("src/main/resources/META-INF/accesstransformer.cfg")
         // to work as there is currently no config option to change this.
         // also, any names used in your access transformer will need to be
         // in SRG mapped ("func_" / "field_" with MCP class names) to work!
@@ -47,6 +47,18 @@ repositories {
         name = "CottonMC"
         url = "https://server.bbkr.space/artifactory/libs-release"
     }
+    maven {
+        url "https://maven.su5ed.dev/releases"
+    }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        url "https://maven.su5ed.dev/releases"
+    }
 }
 
 dependencies {
@@ -58,15 +70,20 @@ dependencies {
     modImplementation "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
     include "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
 
-    modImplementation include("io.github.cottonmc:LibGui:8.1.0+1.20.1")
+    modImplementation include("io.github.Mysticpasta1:libgui:342ff6fc9f")
 
     implementation 'com.madgag:animated-gif-lib:1.4'
     include 'com.madgag:animated-gif-lib:1.4'
+
+    modCompileOnly ("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
+    modRuntimeOnly ("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
+
 }
 
 processResources {
     // define properties that can be used during resource processing
     inputs.property "version", project.version
+    inputs.property("fabric_api_version", project.fabric_version)
 
     // this will replace the property "${version}" in your mods.toml
     // with the version you've defined in your gradle.properties
@@ -122,3 +139,4 @@ publishing {
         // retrieving dependencies.
     }
 }
+

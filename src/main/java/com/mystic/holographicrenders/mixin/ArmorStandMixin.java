@@ -1,6 +1,7 @@
 package com.mystic.holographicrenders.mixin;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import com.mystic.holographicrenders.item.EntityScannerItem;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.MobEntity;
@@ -35,7 +36,7 @@ public abstract class ArmorStandMixin {
     public void interactAt(PlayerEntity player, Vec3d hitPos, Hand hand, CallbackInfoReturnable<ActionResult> cir){
         cir.cancel();
         ItemStack itemStack = player.getStackInHand(hand);
-        if (itemStack.getItem() != HolographicRenders.ENTITY_SCANNER) {
+        if (!(itemStack.getItem() instanceof EntityScannerItem)) {
             cir.setReturnValue(ActionResult.PASS);
             if (!this.isMarker() && itemStack.getItem() != Items.NAME_TAG) {
                 if (player.isSpectator()) {

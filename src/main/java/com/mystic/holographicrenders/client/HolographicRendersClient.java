@@ -19,16 +19,21 @@ import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
-public class HolographicRendersClient implements ClientModInitializer {
+@Mod.EventBusSubscriber(modid = "holographic_renders", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+public class HolographicRendersClient {
 
-    @Override
-    public void onInitializeClient() {
-        BlockEntityRendererFactories.register(HolographicRenders.PROJECTOR_BLOCK_ENTITY, ProjectorBlockEntityRenderer::new);
+   @SubscribeEvent
+    public static void onInitializeClient(FMLClientSetupEvent event) {
+        BlockEntityRendererFactories.register(HolographicRenders.PROJECTOR_BLOCK_ENTITY.get(), ProjectorBlockEntityRenderer::new);
 
         RenderDataProvider.registerDefaultProviders();
 
-        ScreenRegistry.register(HolographicRenders.PROJECTOR_SCREEN_HANDLER, ProjectorScreen::new);
+        ScreenRegistry.register(HolographicRenders.PROJECTOR_SCREEN_HANDLER.get(), ProjectorScreen::new);
 
         ClientPlayNetworking.registerGlobalReceiver(LightPacket.UPDATE_ID, LightPacket::onClientUpdate);
         ClientPlayNetworking.registerGlobalReceiver(SpinPacket.UPDATE_ID, SpinPacket::onClientUpdate);

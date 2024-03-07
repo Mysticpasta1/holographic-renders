@@ -2,8 +2,10 @@ package com.mystic.holographicrenders.blocks.projector;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.*;
+import com.mystic.holographicrenders.item.AreaScannerItem;
 import com.mystic.holographicrenders.item.EntityScannerItem;
 
+import com.mystic.holographicrenders.item.TextureScannerItem;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.BlockItem;
@@ -23,7 +25,7 @@ public class ItemProjectionHandler {
     private static final HashMap<Predicate<ItemStack>, ItemProjectionBehaviour> REGISTRY = new HashMap<>();
 
     static {
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.ENTITY_SCANNER, (be, stack) -> {
+        registerBehaviour(stack -> stack.getItem() instanceof EntityScannerItem, (be, stack) -> {
             if (!stack.getOrCreateNbt().contains("Entity")) return EmptyProvider.INSTANCE;
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
             if (type == null) return EmptyProvider.INSTANCE;
@@ -33,7 +35,7 @@ public class ItemProjectionHandler {
             return EntityProvider.from(entity);
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.AREA_SCANNER, (be, stack) -> {
+        registerBehaviour(stack -> stack.getItem() instanceof AreaScannerItem, (be, stack) -> {
             NbtCompound tag = stack.getOrCreateNbt();
             if (tag.contains("Pos1") && tag.contains("Pos2")) {
                 BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
@@ -49,7 +51,7 @@ public class ItemProjectionHandler {
 
         });
 
-        registerBehaviour(stack -> stack.getItem() == HolographicRenders.TEXTURE_SCANNER, (be, stack) -> {
+        registerBehaviour(stack -> stack.getItem() instanceof TextureScannerItem, (be, stack) -> {
             try {
                 return TextureProvider.of(be.getStack(0).getOrCreateNbt().getString("URL"));
             } catch (ExecutionException e) {

@@ -1,6 +1,7 @@
 package com.mystic.holographicrenders.mixin;
 
 import com.mystic.holographicrenders.HolographicRenders;
+import com.mystic.holographicrenders.item.AreaScannerItem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.*;
@@ -24,7 +25,7 @@ public class WorldRendererMixin {
     public void drawAreaSelection(MatrixStack matrices, float tickDelta, long limitTime, boolean renderBlockOutline, Camera camera, GameRenderer gameRenderer, LightmapTextureManager lightmapTextureManager, Matrix4f projectionMatrix, CallbackInfo ci) {
         final MinecraftClient client = MinecraftClient.getInstance();
         final ClientPlayerEntity player = client.player;
-        if (player.getMainHandStack().getItem() != HolographicRenders.AREA_SCANNER) return;
+        if (!(player.getMainHandStack().getItem() instanceof AreaScannerItem)) return;
 
         NbtCompound tag = player.getMainHandStack().getOrCreateNbt();
 

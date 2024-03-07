@@ -42,7 +42,7 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
     }
 
     public ProjectorBlockEntity(BlockPos pos, BlockState state) {
-        super(HolographicRenders.PROJECTOR_BLOCK_ENTITY, pos, state);
+        super(HolographicRenders.PROJECTOR_BLOCK_ENTITY.get(), pos, state);
     }
 
     public ItemStack getItem() {
