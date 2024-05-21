@@ -23,14 +23,13 @@ public abstract class ArmorStandMixin {
 
     @Shadow public abstract boolean isMarker();
 
-    @Unique
-    protected abstract EquipmentSlot slotFromPosition(Vec3d vec3d);
-
     @Shadow protected abstract boolean isSlotDisabled(EquipmentSlot slot);
 
     @Shadow protected abstract boolean equip(PlayerEntity player, EquipmentSlot slot, ItemStack stack, Hand hand);
 
     @Shadow public abstract boolean shouldShowArms();
+
+    @Shadow protected abstract EquipmentSlot getSlotFromPosition(Vec3d hitPos);
 
     @Inject(method = "interactAt", at = @At("HEAD"), cancellable = true)
     public void interactAt(PlayerEntity player, Vec3d hitPos, Hand hand, CallbackInfoReturnable<ActionResult> cir){
@@ -46,7 +45,7 @@ public abstract class ArmorStandMixin {
                 } else {
                     EquipmentSlot equipmentSlot = MobEntity.getPreferredEquipmentSlot(itemStack);
                     if (itemStack.isEmpty()) {
-                        EquipmentSlot equipmentSlot2 = this.slotFromPosition(hitPos);
+                        EquipmentSlot equipmentSlot2 = this.getSlotFromPosition(hitPos);
                         EquipmentSlot equipmentSlot3 = this.isSlotDisabled(equipmentSlot2) ? equipmentSlot : equipmentSlot2;
                         if (player.hasStackEquipped(equipmentSlot3) && this.equip(player, equipmentSlot3, itemStack, hand)) {
                             cir.setReturnValue(ActionResult.SUCCESS);

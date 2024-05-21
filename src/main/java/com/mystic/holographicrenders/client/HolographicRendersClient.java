@@ -10,7 +10,6 @@ import com.mystic.holographicrenders.gui.WidgetScreen;
 import com.mystic.holographicrenders.network.LightPacket;
 import com.mystic.holographicrenders.network.RotatePacket;
 import com.mystic.holographicrenders.network.SpinPacket;
-import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 import net.minecraft.block.entity.BlockEntity;

@@ -1,7 +1,6 @@
 package com.mystic.holographicrenders.client;
 
 import com.mystic.holographicrenders.HolographicRenders;
-import io.github.cottonmc.cotton.gui.ItemSyncedGuiDescription;
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription;
 import io.github.cottonmc.cotton.gui.widget.WButton;
 import io.github.cottonmc.cotton.gui.widget.WGridPanel;
@@ -9,8 +8,6 @@ import io.github.cottonmc.cotton.gui.widget.WLabel;
 import io.github.cottonmc.cotton.gui.widget.WTextField;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.StackReference;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.text.Text;
 import net.minecraft.util.Hand;
