@@ -6,5 +6,4 @@ import java.util.function.Consumer;
 
 public class Common {
     public static Consumer<Hand> textScreenRunnable;
-    public static Consumer<Hand> widgetScreenRunnable;
 }

@@ -14,7 +14,7 @@ public class EmptyProvider extends RenderDataProvider<Void> {
 
     public static com.mystic.holographicrenders.client.EmptyProvider INSTANCE = new com.mystic.holographicrenders.client.EmptyProvider();
 
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "empty");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "empty");
 
     private EmptyProvider() {
         super(null);

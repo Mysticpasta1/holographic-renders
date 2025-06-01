@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class MapProvider extends RenderDataProvider<Integer> {
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "map");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "map");
 
     private static final LoadingCache<Integer, com.mystic.holographicrenders.client.MapProvider> cache = CacheBuilder.newBuilder()
             .maximumSize(20)

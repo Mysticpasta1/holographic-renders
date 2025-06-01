@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 import static net.minecraft.util.math.ColorHelper.Argb.*;
 
 public class TextureProvider extends RenderDataProvider<Identifier> {
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "texture");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "texture");
 
     private static final LoadingCache<String, com.mystic.holographicrenders.client.TextureProvider> cache = CacheBuilder.newBuilder()
             .maximumSize(20)
@@ -53,7 +53,7 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
                     } catch (Exception e) {
                         e.printStackTrace();
 
-                        Identifier id = new Identifier("missingno");
+                        Identifier id = Identifier.withDefaultNamespace("missingno");
 
                         return new com.mystic.holographicrenders.client.TextureProvider(id, new RegularSprite(id, 16, 16));
                     }
@@ -105,7 +105,7 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
 
         String type = conn.getContentType();
 
-        Identifier id = new Identifier(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
+        Identifier id = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
 
         if (type.contains("gif")) {
             GifSprite.GifDefinition definition = new GifSprite.GifDefinition();
@@ -194,7 +194,7 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
 
     @Override
     protected void read(NbtCompound tag, ProjectorBlockEntity be) {
-        this.data = new Identifier(tag.getString("Texture"));
+        this.data = Identifier.withDefaultNamespace(tag.getString("Texture"));
     }
 
     @Override

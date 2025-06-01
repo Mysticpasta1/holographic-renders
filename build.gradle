@@ -1,5 +1,5 @@
 plugins {
-    id "dev.architectury.loom" version "1.3-SNAPSHOT"
+    id "dev.architectury.loom" version "1.10-SNAPSHOT"
     id "maven-publish"
 }
 
@@ -70,25 +70,29 @@ dependencies {
     modImplementation "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
     include "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
 
-    modImplementation include("io.github.Mysticpasta1:libgui:342ff6fc9f")
+    modImplementation(files('libs/LibGui-9.2.1.jar'))
+    modImplementation "curse.maven:architectury-api-419699:5137938"
 
     implementation 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7'
-    include 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7'
+    // include 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7'
 
-    modCompileOnly ("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
-    modRuntimeOnly ("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
-
+    modCompileOnly("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
+    modRuntimeOnly("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
 }
 
 processResources {
     // define properties that can be used during resource processing
     inputs.property "version", project.version
-    inputs.property("fabric_api_version", project.fabric_version)
 
     // this will replace the property "${version}" in your mods.toml
     // with the version you've defined in your gradle.properties
     filesMatching("META-INF/mods.toml") {
         expand "version": project.version
+    }
+
+    from('libs') {
+        include 'LibGui-9.2.1.jar'
+        into 'META-INF/jarjar/'
     }
 }
 

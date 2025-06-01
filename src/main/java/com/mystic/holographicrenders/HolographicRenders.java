@@ -58,8 +58,8 @@ public class HolographicRenders {
     public static final RegistryObject<BlockEntityType<ProjectorBlockEntity>> PROJECTOR_BLOCK_ENTITY = TILE_ENTITIES.register(PROJECTOR_ID, () -> FabricBlockEntityTypeBuilder.create(ProjectorBlockEntity::new, PROJECTOR_BLOCK.get()).build(null));
     public static final RegistryObject<ScreenHandlerType<ProjectorScreenHandler>> PROJECTOR_SCREEN_HANDLER = SCREEN_HANDLERS.register("projector_screen", () -> new ExtendedScreenHandlerType<>(ProjectorScreenHandler::new));
 
-    public HolographicRenders() {
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
+    public HolographicRenders(FMLJavaModLoadingContext context) {
+        IEventBus bus = context.getModEventBus();
         ITEMS.register(bus);
         BLOCKS.register(bus);
         ITEM_GROUPS.register(bus);
@@ -69,7 +69,7 @@ public class HolographicRenders {
         ServerPlayNetworking.registerGlobalReceiver(LightPacket.ACTION_REQUEST_ID, LightPacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(SpinPacket.ACTION_REQUEST_ID, SpinPacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(RotatePacket.ACTION_REQUEST_ID, RotatePacket::onActionRequest);
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
             String url = buf.readString();
             ItemStack stack = player.getStackInHand(buf.readEnumConstant(Hand.class));
             server.execute(() -> {
@@ -81,21 +81,7 @@ public class HolographicRenders {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "widget_packet"), (server, player, handler, buf, responseSender) -> {
-            Hand hand = buf.readEnumConstant(Hand.class);
-            WidgetType type = buf.readEnumConstant(WidgetType.class);
-            server.execute(() -> {
-                ItemStack stack = player.getStackInHand(hand);
-                if(stack.getItem() instanceof WidgetScannerItem) {
-                    NbtCompound tag = stack.getOrCreateNbt();
-                    tag.putInt("Widget", type.ordinal());
-                    stack.writeNbt(tag);
-                }
-            });
-        });
-
-
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "light_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "light_packet"), (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             boolean lights = buf.readBoolean();
             server.execute(() -> {
@@ -106,7 +92,7 @@ public class HolographicRenders {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "spin_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "spin_packet"), (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             boolean spin = buf.readBoolean();
             server.execute(() -> {
@@ -117,7 +103,7 @@ public class HolographicRenders {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "rotate_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "rotate_packet"), (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             int rotation = buf.readInt();
             server.execute(() -> {

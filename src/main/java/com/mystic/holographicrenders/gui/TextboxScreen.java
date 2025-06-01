@@ -9,10 +9,7 @@ public class TextboxScreen extends CottonClientScreen {
         super(description);
     }
 
-    @Override
-    public void init() {
-        super.init();
-    }
+
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
