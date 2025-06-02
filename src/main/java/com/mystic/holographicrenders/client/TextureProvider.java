@@ -22,6 +22,9 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import javax.imageio.ImageIO;
 import javax.net.ssl.HttpsURLConnection;
@@ -105,9 +108,35 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
 
         String type = conn.getContentType();
 
-        Identifier id = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
+        System.out.println("blep" + conn.getContentType());
 
-        if (type.contains("gif")) {
+        Identifier id = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, RandomStringUtils.random(6, true, true).toLowerCase());
+        if (type.contains("html")) {
+            try {
+                Document doc = Jsoup.connect(url.toString()).get();
+
+                // Step 2: Find the first <img> tag
+                Element img = doc.selectFirst("img");
+
+                if (img != null) {
+                    String imgSrc = img.absUrl("src"); // Gets the full URL of the image
+                    System.out.println("Found image URL: " + imgSrc);
+
+                    BufferedImage bufferedImage = convertToARGB(ImageIO.read(new URL(imgSrc)));
+
+                    image = new NativeImage(NativeImage.Format.RGBA, bufferedImage.getWidth(), bufferedImage.getHeight(), false);
+
+                    for (int x = 0; x < image.getWidth(); x++)
+                        for (int y = 0; y < image.getHeight(); y++) {
+                            image.setColor(x, y, convertColor(bufferedImage.getRGB(x, y)));
+                        }
+
+                    sprite = new RegularSprite(id, image.getWidth(), image.getHeight());
+                }
+            } catch (IOException e) {
+                System.out.println("Can't find html image");
+            }
+        } else if (type.contains("gif")) {
             GifSprite.GifDefinition definition = new GifSprite.GifDefinition();
             GifDecoder decoder = getFrames(conn.getInputStream());
 
@@ -143,7 +172,7 @@ public class TextureProvider extends RenderDataProvider<Identifier> {
 
             sprite = new GifSprite(id, definition);
 
-        } else if (!type.contains("gif") && (type.contains("png") || (type.contains("html")) || type.contains("jpeg") || type.contains("jpg") || type.contains("tiff"))) {
+        } else if (!type.contains("gif") && (type.contains("png") || type.contains("jpeg") || type.contains("jpg") || type.contains("tiff"))) {
             if (type.contains("png")) {
                 image = NativeImage.read(conn.getInputStream());
             } else if (type.contains("jpeg") || type.contains("jpg") || type.contains("tiff")) {

@@ -85,7 +85,7 @@ public class ProjectorScreenHandler extends ScreenHandler {
             PacketByteBuf buf = PacketByteBufs.create();
             buf.writeBlockPos(blockEntity.getPos());
             buf.writeBoolean(lights);
-            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "light_packet"), buf);
+            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "light_packet"), buf);
         } else {
             blockEntity.setLightEnabled(lights);
         }
@@ -100,7 +100,7 @@ public class ProjectorScreenHandler extends ScreenHandler {
             PacketByteBuf buf = PacketByteBufs.create();
             buf.writeBlockPos(blockEntity.getPos());
             buf.writeBoolean(spin);
-            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "spin_packet"), buf);
+            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "spin_packet"), buf);
         } else {
             blockEntity.setSpinEnabled(spin);
         }
@@ -115,7 +115,7 @@ public class ProjectorScreenHandler extends ScreenHandler {
             PacketByteBuf buf = PacketByteBufs.create();
             buf.writeBlockPos(blockEntity.getPos());
             buf.writeInt(rotate);
-            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "rotate_packet"), buf);
+            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "rotate_packet"), buf);
         } else {
             blockEntity.setRotation(rotate);
         }

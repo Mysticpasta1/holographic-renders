@@ -46,7 +46,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Text.of("")));
         RenderDataProviderRegistry.register(TextureProvider.ID, () -> {
-            Identifier id = new Identifier("missingno");
+            Identifier id = Identifier.withDefaultNamespace("missingno");
             return new TextureProvider(id, new RegularSprite(id, 16,16));
         });
         RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(-1));

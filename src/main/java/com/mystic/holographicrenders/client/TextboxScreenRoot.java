@@ -26,7 +26,7 @@ public class TextboxScreenRoot extends LightweightGuiDescription {
         textFieldWidget.setMaxLength(90);
         root.add(textFieldWidget, 0, 5, 15, 10);
         root.add(button, 4, 8, 6, 20);
-        root.add(label, 4, 8);
+        root.add(label, 7, 7);
         root.validate(this);
         button.setOnClick(() -> {
             PacketByteBuf buf = PacketByteBufs.create();

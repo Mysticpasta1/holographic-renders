@@ -42,6 +42,7 @@ loom {
 
 repositories {
     mavenCentral()
+    maven { url 'https://mvnrepository.com/artifact/org.jsoup/jsoup' }
     maven { url 'https://jitpack.io' }
     maven {
         name = "CottonMC"
@@ -62,7 +63,7 @@ repositories {
 }
 
 dependencies {
-    // to change the versions see the gradle.properties file
+    // Normal mod deps
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     forge "net.minecraftforge:forge:${project.forge_version}"
@@ -70,14 +71,21 @@ dependencies {
     modImplementation "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
     include "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
 
-    modImplementation(files('libs/LibGui-9.2.1.jar'))
+    include(implementation 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7')
+
+    implementation "org.jsoup:jsoup:1.20.1"
+    include "org.jsoup:jsoup:1.20.1"
+
+    modImplementation('com.github.GenerationsMod.LibGui:LibGui-forge:2512e46638') {
+        transitive = false
+    }
+    include('com.github.GenerationsMod.LibGui:LibGui-forge:2512e46638') {
+        transitive = false
+    }
+
     modImplementation "curse.maven:architectury-api-419699:5137938"
-
-    implementation 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7'
-    // include 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7'
-
-    modCompileOnly("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
-    modRuntimeOnly("dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1")
+    modCompileOnly "dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1"
+    modRuntimeOnly "dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1"
 }
 
 processResources {
