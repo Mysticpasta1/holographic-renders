@@ -18,7 +18,7 @@ import net.minecraft.util.math.RotationAxis;
 
 public class TextProvider extends RenderDataProvider<Text> {
 
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "text");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "text");
 
     protected TextProvider(Text data) {
         super(data);

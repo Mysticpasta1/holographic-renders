@@ -20,7 +20,7 @@ import java.util.function.Function;
 
 public class EntityProvider extends RenderDataProvider<Entity> {
 
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "entity");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "entity");
     private NbtCompound entityTag = null;
 
     protected EntityProvider(Entity data) {

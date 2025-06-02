@@ -16,7 +16,7 @@ import net.minecraft.util.math.RotationAxis;
 
 public class ItemProvider extends RenderDataProvider<ItemStack> {
 
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "item");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "item");
 
     protected ItemProvider(ItemStack data) {
         super(data);

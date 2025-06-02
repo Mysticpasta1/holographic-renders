@@ -20,8 +20,8 @@ import java.util.Objects;
 
 public class LightPacket {
 
-    public static final Identifier UPDATE_ID = new Identifier(HolographicRenders.MOD_ID, "update_light");
-    public static final Identifier ACTION_REQUEST_ID = new Identifier(HolographicRenders.MOD_ID, "update_light_action");
+    public static final Identifier UPDATE_ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "update_light");
+    public static final Identifier ACTION_REQUEST_ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "update_light_action");
     public static Packet<?> createUpdate(boolean lights) {
         PacketByteBuf buffer = PacketByteBufs.create();
 

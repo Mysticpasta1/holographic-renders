@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ProjectorScreen extends HandledScreen<ProjectorScreenHandler> {
-    private static final Identifier TEXTURE = new Identifier("holographic_renders", "textures/gui_hologram_projector.png");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath("holographic_renders", "textures/gui_hologram_projector.png");
 
     private boolean lightsEnabled = false;
     private boolean spinEnabled;

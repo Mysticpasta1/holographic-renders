@@ -17,7 +17,7 @@ import net.minecraft.util.math.RotationAxis;
 
 public class BlockProvider extends RenderDataProvider<BlockState> {
 
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "block");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "block");
 
     protected BlockProvider(BlockState data) {
         super(data);

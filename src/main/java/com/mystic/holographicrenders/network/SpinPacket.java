@@ -20,8 +20,8 @@ import java.util.Objects;
 
 public class SpinPacket {
 
-    public static final Identifier UPDATE_ID = new Identifier(HolographicRenders.MOD_ID, "update_spin");
-    public static final Identifier ACTION_REQUEST_ID = new Identifier(HolographicRenders.MOD_ID, "update_spin_action");
+    public static final Identifier UPDATE_ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "update_spin");
+    public static final Identifier ACTION_REQUEST_ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "update_spin_action");
     public static Packet<?> createUpdate(boolean spin) {
         PacketByteBuf buffer = PacketByteBufs.create();
 

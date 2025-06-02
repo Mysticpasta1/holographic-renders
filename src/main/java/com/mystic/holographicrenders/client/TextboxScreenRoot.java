@@ -35,7 +35,7 @@ public class TextboxScreenRoot extends LightweightGuiDescription {
             PacketByteBuf buf = PacketByteBufs.create();
             buf.writeString(textFieldWidget.getText(), 2000);
             buf.writeEnumConstant(hand);
-            ClientPlayNetworking.send(new Identifier(HolographicRenders.MOD_ID, "url_packet"), buf);
+            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "url_packet"), buf);
         });
     }
 }

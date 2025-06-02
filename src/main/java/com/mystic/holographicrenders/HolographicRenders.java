@@ -47,14 +47,13 @@ public class HolographicRenders implements ModInitializer {
     public static final Item AREA_SCANNER = new AreaScannerItem();
     public static final Item TEXTURE_SCANNER = new TextureScannerItem();
     public static final Item ENTITY_SCANNER = new EntityScannerItem();
-    public static final Item WIDGET_SCANNER = new WidgetScannerItem();
 
     public static final Block PROJECTOR_BLOCK = new ProjectorBlock();
     public static final Item PROJECTOR_ITEM = new BlockItem(PROJECTOR_BLOCK, new Item.Settings());
     public static final BlockEntityType<ProjectorBlockEntity> PROJECTOR_BLOCK_ENTITY = FabricBlockEntityTypeBuilder.create(ProjectorBlockEntity::new, PROJECTOR_BLOCK).build(null);
 
-    public static final Identifier PROJECTOR_ID = new Identifier(MOD_ID, "projector");
-    public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER = Registry.register(Registries.SCREEN_HANDLER, new Identifier(MOD_ID, "projector_screen"), new ExtendedScreenHandlerType<>(ProjectorScreenHandler::new));
+    public static final Identifier PROJECTOR_ID = Identifier.fromNamespaceAndPath(MOD_ID, "projector");
+    public static final ScreenHandlerType<ProjectorScreenHandler> PROJECTOR_SCREEN_HANDLER = Registry.register(Registries.SCREEN_HANDLER, Identifier.fromNamespaceAndPath(MOD_ID, "projector_screen"), new ExtendedScreenHandlerType<>(ProjectorScreenHandler::new));
     
     @Override
     public void onInitialize() {
@@ -65,10 +64,9 @@ public class HolographicRenders implements ModInitializer {
         Registry.register(Registries.ITEM, PROJECTOR_ID, PROJECTOR_ITEM);
         Registry.register(Registries.BLOCK_ENTITY_TYPE, PROJECTOR_ID, PROJECTOR_BLOCK_ENTITY);
 
-        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "area_scanner"), AREA_SCANNER);
-        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "texture_scanner"), TEXTURE_SCANNER);
-        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
-        Registry.register(Registries.ITEM, new Identifier(MOD_ID, "widget_scanner"), WIDGET_SCANNER);
+        Registry.register(Registries.ITEM, Identifier.fromNamespaceAndPath(MOD_ID, "area_scanner"), AREA_SCANNER);
+        Registry.register(Registries.ITEM, Identifier.fromNamespaceAndPath(MOD_ID, "texture_scanner"), TEXTURE_SCANNER);
+        Registry.register(Registries.ITEM, Identifier.fromNamespaceAndPath(MOD_ID, "entity_scanner"), ENTITY_SCANNER);
 
         addToMainTab(AREA_SCANNER.asItem());
         addToMainTab(TEXTURE_SCANNER.asItem());
@@ -76,12 +74,12 @@ public class HolographicRenders implements ModInitializer {
         //addToMainTab(WIDGET_SCANNER.asItem());
         addToMainTab(PROJECTOR_ITEM.asItem());
 
-        Registry.register(Registries.ITEM_GROUP, new Identifier(MOD_ID, "group"), owo);
+        Registry.register(Registries.ITEM_GROUP, Identifier.fromNamespaceAndPath(MOD_ID, "group"), owo);
 
         ServerPlayNetworking.registerGlobalReceiver(LightPacket.ACTION_REQUEST_ID, LightPacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(SpinPacket.ACTION_REQUEST_ID, SpinPacket::onActionRequest);
         ServerPlayNetworking.registerGlobalReceiver(RotatePacket.ACTION_REQUEST_ID, RotatePacket::onActionRequest);
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "url_packet"), (server, player, handler, buf, responseSender) -> {
             String url = buf.readString();
             ItemStack stack = player.getStackInHand(buf.readEnumConstant(Hand.class));
             server.execute(() -> {
@@ -93,7 +91,7 @@ public class HolographicRenders implements ModInitializer {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "widget_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "widget_packet"), (server, player, handler, buf, responseSender) -> {
             Hand hand = buf.readEnumConstant(Hand.class);
             WidgetType type = buf.readEnumConstant(WidgetType.class);
             server.execute(() -> {
@@ -107,7 +105,7 @@ public class HolographicRenders implements ModInitializer {
         });
 
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "light_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "light_packet"), (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             boolean lights = buf.readBoolean();
             server.execute(() -> {
@@ -118,7 +116,7 @@ public class HolographicRenders implements ModInitializer {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "spin_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "spin_packet"), (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             boolean spin = buf.readBoolean();
             server.execute(() -> {
@@ -129,7 +127,7 @@ public class HolographicRenders implements ModInitializer {
             });
         });
 
-        ServerPlayNetworking.registerGlobalReceiver(new Identifier(HolographicRenders.MOD_ID, "rotate_packet"), (server, player, handler, buf, responseSender) -> {
+        ServerPlayNetworking.registerGlobalReceiver(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "rotate_packet"), (server, player, handler, buf, responseSender) -> {
             BlockPos pos = buf.readBlockPos();
             int rotation = buf.readInt();
             server.execute(() -> {

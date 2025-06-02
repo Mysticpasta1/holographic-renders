@@ -37,7 +37,7 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
                 }
             });
 
-    public static final Identifier ID = new Identifier(HolographicRenders.MOD_ID, "area");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "area");
 
     private final MinecraftClient client;
     private final WorldMesherFluidRenderer worldMesherFluidRenderer;
