@@ -5,7 +5,6 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "ArmorStandMixin",
-    "VertexConsumerProviderImmediateAccessor",
     "WorldRendererMixin"
   ],
   "client": [

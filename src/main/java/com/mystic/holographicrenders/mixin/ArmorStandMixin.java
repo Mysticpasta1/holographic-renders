@@ -1,74 +1,71 @@
 package com.mystic.holographicrenders.mixin;
 
-import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.item.EntityScannerItem;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ArmorStandEntity.class)
+@Mixin(ArmorStand.class)
 public abstract class ArmorStandMixin {
 
-    @Shadow public abstract boolean isMarker();
+    @Shadow protected abstract boolean isDisabled(EquipmentSlot slot);
 
-    @Shadow protected abstract boolean isSlotDisabled(EquipmentSlot slot);
+    @Shadow protected abstract boolean swapItem(Player player, EquipmentSlot slot, ItemStack stack, InteractionHand hand);
 
-    @Shadow protected abstract boolean equip(PlayerEntity player, EquipmentSlot slot, ItemStack stack, Hand hand);
+    @Shadow public abstract boolean isShowArms();
 
-    @Shadow public abstract boolean shouldShowArms();
+    @Shadow protected abstract EquipmentSlot getClickedSlot(Vec3 hitPos);
 
-    @Shadow protected abstract EquipmentSlot getSlotFromPosition(Vec3d hitPos);
-
+    /**
+     * @author Mysticpasta1
+     * @reason Inject was failing for some reason
+     */
     @Inject(method = "interactAt", at = @At("HEAD"), cancellable = true)
-    public void interactAt(PlayerEntity player, Vec3d hitPos, Hand hand, CallbackInfoReturnable<ActionResult> cir){
+    public void interactAt(Player player, Vec3 hitPos, InteractionHand hand, CallbackInfoReturnable<InteractionResult> cir){
         cir.cancel();
-        ItemStack itemStack = player.getStackInHand(hand);
+        ItemStack itemStack = player.getItemInHand(hand);
         if (!(itemStack.getItem() instanceof EntityScannerItem)) {
-            cir.setReturnValue(ActionResult.PASS);
-            if (!this.isMarker() && itemStack.getItem() != Items.NAME_TAG) {
+            if (!((ArmorStand) (Object) this).isMarker() && itemStack.getItem() != Items.NAME_TAG) {
                 if (player.isSpectator()) {
-                 cir.setReturnValue(ActionResult.SUCCESS);
-                } else if (player.getWorld().isClient) {
-                    cir.setReturnValue(ActionResult.CONSUME);
+                    cir.setReturnValue(InteractionResult.SUCCESS);
+                } else if (player.level().isClientSide) {
+                    cir.setReturnValue(InteractionResult.CONSUME);
                 } else {
-                    EquipmentSlot equipmentSlot = MobEntity.getPreferredEquipmentSlot(itemStack);
+                    EquipmentSlot equipmentSlot = Mob.getEquipmentSlotForItem(itemStack);
                     if (itemStack.isEmpty()) {
-                        EquipmentSlot equipmentSlot2 = this.getSlotFromPosition(hitPos);
-                        EquipmentSlot equipmentSlot3 = this.isSlotDisabled(equipmentSlot2) ? equipmentSlot : equipmentSlot2;
-                        if (player.hasStackEquipped(equipmentSlot3) && this.equip(player, equipmentSlot3, itemStack, hand)) {
-                            cir.setReturnValue(ActionResult.SUCCESS);
+                        EquipmentSlot equipmentSlot2 = this.getClickedSlot(hitPos);
+                        EquipmentSlot equipmentSlot3 = this.isDisabled(equipmentSlot2) ? equipmentSlot : equipmentSlot2;
+                        if (player.hasItemInSlot(equipmentSlot3) && this.swapItem(player, equipmentSlot3, itemStack, hand)) {
+                            cir.setReturnValue(InteractionResult.SUCCESS);
                         }
                     } else {
-                        if (this.isSlotDisabled(equipmentSlot)) {
-                            cir.setReturnValue(ActionResult.FAIL);
+                        if (this.isDisabled(equipmentSlot)) {
+                            cir.setReturnValue(InteractionResult.FAIL);
                         }
 
-                        if (equipmentSlot.getType() == EquipmentSlot.Type.HAND && !this.shouldShowArms()) {
-                            cir.setReturnValue(ActionResult.FAIL);
+                        if (equipmentSlot.getType() == EquipmentSlot.Type.HAND && !this.isShowArms()) {
+                            cir.setReturnValue(InteractionResult.FAIL);
                         }
 
-                        if (this.equip(player, equipmentSlot, itemStack, hand)) {
-                            cir.setReturnValue(ActionResult.SUCCESS);
+                        if (this.swapItem(player, equipmentSlot, itemStack, hand)) {
+                            cir.setReturnValue(InteractionResult.SUCCESS);
                         }
                     }
-
-                    cir.setReturnValue(ActionResult.PASS);
+                    cir.setReturnValue(InteractionResult.PASS);
                 }
             }
-        } else {
-            cir.setReturnValue(ActionResult.PASS);
         }
+        cir.setReturnValue(InteractionResult.PASS);
     }
 }

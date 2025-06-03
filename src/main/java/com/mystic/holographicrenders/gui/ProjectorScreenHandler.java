@@ -6,33 +6,26 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.screen.PropertyDelegate;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerListener;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.world.World;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
-public class ProjectorScreenHandler extends ScreenHandler {
+public class ProjectorScreenHandler extends AbstractContainerMenu {
 
     private final ProjectorBlockEntity blockEntity;
 
-    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, ProjectorBlockEntity blockEntity) {
+    public ProjectorScreenHandler(int syncId, Inventory playerInventory, ProjectorBlockEntity blockEntity) {
 
-        this(syncId, playerInventory, PacketByteBufs.create().writeBlockPos(blockEntity.getPos()));
+        this(syncId, playerInventory, PacketByteBufs.create().writeBlockPos(blockEntity.getBlockPos()));
     }
 
-    public ProjectorScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buffer) {
+    public ProjectorScreenHandler(int syncId, Inventory playerInventory, FriendlyByteBuf buffer) {
         super(HolographicRenders.PROJECTOR_SCREEN_HANDLER.get(), syncId);
-        this.blockEntity = (ProjectorBlockEntity) playerInventory.player.getWorld().getBlockEntity(buffer.readBlockPos());
+        this.blockEntity = (ProjectorBlockEntity) playerInventory.player.level().getBlockEntity(buffer.readBlockPos());
 
         this.addSlot(new Slot(blockEntity, 0, 80, 35));
 
@@ -50,30 +43,30 @@ public class ProjectorScreenHandler extends ScreenHandler {
     }
 
     @Override
-    public ItemStack quickMove(PlayerEntity player, int invSlot) {
+    public ItemStack quickMoveStack(Player player, int invSlot) {
         ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(invSlot);
 
-        if (slot != null && slot.hasStack()) {
-            ItemStack originalStack = slot.getStack();
+        if (slot != null && slot.hasItem()) {
+            ItemStack originalStack = slot.getItem();
             newStack = originalStack.copy();
 
-            if (invSlot < blockEntity.size()) {
-                if (!this.insertItem(originalStack, blockEntity.size(), this.slots.size(), true)) {
+            if (invSlot < blockEntity.getContainerSize()) {
+                if (!this.moveItemStackTo(originalStack, blockEntity.getContainerSize(), this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (!this.insertItem(originalStack, 0, blockEntity.size(), false)) {
+            } else if (!this.moveItemStackTo(originalStack, 0, blockEntity.getContainerSize(), false)) {
                 return ItemStack.EMPTY;
             }
-            slot.markDirty();
+            slot.setChanged();
         }
 
         return newStack;
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
-        return blockEntity.canPlayerUse(player);
+    public boolean stillValid(Player player) {
+        return blockEntity.stillValid(player);
     }
 
     public boolean getLight() {
@@ -81,11 +74,11 @@ public class ProjectorScreenHandler extends ScreenHandler {
     }
 
     public void setLight(boolean lights) {
-        if (blockEntity.getWorld().isClient) {
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeBlockPos(blockEntity.getPos());
+        if (blockEntity.getLevel().isClientSide) {
+            FriendlyByteBuf buf = PacketByteBufs.create();
+            buf.writeBlockPos(blockEntity.getBlockPos());
             buf.writeBoolean(lights);
-            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "light_packet"), buf);
+            ClientPlayNetworking.send(ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "light_packet"), buf);
         } else {
             blockEntity.setLightEnabled(lights);
         }
@@ -96,11 +89,11 @@ public class ProjectorScreenHandler extends ScreenHandler {
     }
 
     public void setSpin(boolean spin) {
-        if (blockEntity.getWorld().isClient) {
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeBlockPos(blockEntity.getPos());
+        if (blockEntity.getLevel().isClientSide) {
+            FriendlyByteBuf buf = PacketByteBufs.create();
+            buf.writeBlockPos(blockEntity.getBlockPos());
             buf.writeBoolean(spin);
-            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "spin_packet"), buf);
+            ClientPlayNetworking.send(ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "spin_packet"), buf);
         } else {
             blockEntity.setSpinEnabled(spin);
         }
@@ -111,11 +104,11 @@ public class ProjectorScreenHandler extends ScreenHandler {
     }
 
     public void setRotate(int rotate) {
-        if (blockEntity.getWorld().isClient) {
-            PacketByteBuf buf = PacketByteBufs.create();
-            buf.writeBlockPos(blockEntity.getPos());
+        if (blockEntity.getLevel().isClientSide) {
+            FriendlyByteBuf buf = PacketByteBufs.create();
+            buf.writeBlockPos(blockEntity.getBlockPos());
             buf.writeInt(rotate);
-            ClientPlayNetworking.send(Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "rotate_packet"), buf);
+            ClientPlayNetworking.send(ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "rotate_packet"), buf);
         } else {
             blockEntity.setRotation(rotate);
         }

@@ -7,29 +7,28 @@ import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.listener.ClientPlayPacketListener;
-import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
 
-    private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
+    private final NonNullList<ItemStack> inventory = NonNullList.withSize(1, ItemStack.EMPTY);
     private float alpha = 1;
     private boolean lightEnabled = true;
     private boolean spinEnabled = true;
@@ -51,12 +50,12 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
 
     public void setItem(ItemStack stack) {
         inventory.set(0, stack);
-        this.markDirty();
+        this.setChanged();
     }
 
     public void setAlpha(float alpha) {
         this.alpha = alpha;
-        this.markDirty();
+        this.setChanged();
     }
 
     public float getAlpha() {
@@ -65,17 +64,17 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
 
     public void setLightEnabled(boolean shouldDrawLights) {
         this.lightEnabled = shouldDrawLights;
-        this.markDirty();
+        this.setChanged();
     }
 
     public void setRotation(int rotation) {
         this.rotation = rotation;
-        this.markDirty();
+        this.setChanged();
     }
 
     public void setSpinEnabled(boolean shouldSpin) {
         this.spinEnabled = shouldSpin;
-        this.markDirty();
+        this.setChanged();
     }
 
     public boolean lightsEnabled() {
@@ -88,73 +87,73 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
     }
 
     @Override
-    public void readNbt(NbtCompound tag) {
-        super.readNbt(tag);
+    public void load(CompoundTag tag) {
+        super.load(tag);
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
         spinEnabled = tag.getBoolean("Spin");
         rotation = tag.getInt("Rotate");
-        Identifier providerId = Identifier.tryParse(tag.getString("RendererType"));
+        ResourceLocation providerId = ResourceLocation.tryParse(tag.getString("RendererType"));
         renderer = providerId == null ? EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
         renderer.fromTag(tag, this);
-        inventory.set(0, ItemStack.fromNbt(tag.getCompound("Stack")));
+        inventory.set(0, ItemStack.of(tag.getCompound("Stack")));
     }
 
     @Override
-    public void writeNbt(NbtCompound tag) {
+    public void saveAdditional(CompoundTag tag) {
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
         tag.putBoolean("Spin", spinEnabled);
         tag.putInt("Rotate", rotation);
-        tag.put("Stack", getItem().writeNbt(new NbtCompound()));
+        tag.put("Stack", getItem().save(new CompoundTag()));
         renderer.toTag(tag, this);
-        super.writeNbt(tag);
+        super.saveAdditional(tag);
     }
 
     public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
         this.renderer = renderer;
         if (sync) {
-            this.markDirty();
+            this.setChanged();
         }
     }
 
     @Override
-    public void markDirty() {
-        super.markDirty();
-        if (!world.isClient) {
-            world.updateListeners(pos, getCachedState(), getCachedState(), 2);
+    public void setChanged() {
+        super.setChanged();
+        if (!level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
         }
     }
 
     @Override
-    public DefaultedList<ItemStack> getItems() {
+    public NonNullList<ItemStack> getItems() {
         return inventory;
     }
 
     @Override
-    public Text getDisplayName() {
-        return Text.literal(getCachedState().getBlock().getTranslationKey());
+    public Component getDisplayName() {
+        return Component.literal(getBlockState().getBlock().getDescriptionId());
     }
 
     @Nullable
     @Override
-    public Packet<ClientPlayPacketListener> toUpdatePacket() {
-        return BlockEntityUpdateS2CPacket.create(this);
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    public NbtCompound toInitialChunkDataNbt() {
-        var nbt = new NbtCompound();
-        writeNbt(nbt);
+    public CompoundTag getUpdateTag() {
+        var nbt = new CompoundTag();
+        saveAdditional(nbt);
         return nbt;
     }
 
     @Override
-    public ScreenHandler createMenu(int syncId, PlayerInventory playerInventory, PlayerEntity player) {
+    public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
         return new ProjectorScreenHandler(syncId, playerInventory, this);
     }
 
     @Override
-    public void writeScreenOpeningData(ServerPlayerEntity player, PacketByteBuf buf) {
-        buf.writeBlockPos(this.getPos());
+    public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
+        buf.writeBlockPos(this.getBlockPos());
     }
 }

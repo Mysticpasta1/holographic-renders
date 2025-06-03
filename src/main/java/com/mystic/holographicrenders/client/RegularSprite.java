@@ -1,15 +1,14 @@
 package com.mystic.holographicrenders.client;
 
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
-import net.minecraft.util.Identifier;
-
 public class RegularSprite implements Sprite {
-    private final Identifier id;
+    private final ResourceLocation id;
     private final int width;
     private final int height;
 
-    public RegularSprite(Identifier id, int width, int height) {
+    public RegularSprite(ResourceLocation id, int width, int height) {
         this.id = id;
         this.width = width;
         this.height = height;
@@ -27,7 +26,7 @@ public class RegularSprite implements Sprite {
 
     @NotNull
     @Override
-    public Identifier getTexture() {
+    public ResourceLocation getTexture() {
         return id;
     }
 

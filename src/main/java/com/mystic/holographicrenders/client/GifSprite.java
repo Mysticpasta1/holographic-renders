@@ -1,16 +1,15 @@
 package com.mystic.holographicrenders.client;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.NotNull;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
-
 public class GifSprite implements Sprite {
-    private final Identifier identifier;
+    private final ResourceLocation identifier;
 
     private final GifDefinition definition;
 
-    public GifSprite(Identifier identifier, GifDefinition definition) {
+    public GifSprite(ResourceLocation identifier, GifDefinition definition) {
         this.identifier = identifier;
         this.definition = definition;
     }
@@ -24,7 +23,7 @@ public class GifSprite implements Sprite {
     }
 
     @NotNull
-    public Identifier getTexture() {
+    public ResourceLocation getTexture() {
         return identifier;
     }
 
@@ -45,7 +44,7 @@ public class GifSprite implements Sprite {
     }
 
     public float minV(int animFrames) {
-        return getVSize() * definition.frames[MathHelper.clamp(animFrames, 0, getFrameCount()-1)];
+        return getVSize() * definition.frames[Mth.clamp(animFrames, 0, getFrameCount()-1)];
     }
 
     @Override

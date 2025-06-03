@@ -3,26 +3,23 @@ package com.mystic.holographicrenders.client;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import io.wispforest.worldmesher.WorldMesh;
-import io.wispforest.worldmesher.mixin.FluidRendererMixin;
 import io.wispforest.worldmesher.renderers.WorldMesherFluidRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.*;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.apache.commons.lang3.tuple.Pair;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -37,9 +34,9 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
                 }
             });
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "area");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "area");
 
-    private final MinecraftClient client;
+    private final Minecraft client;
     private final WorldMesherFluidRenderer worldMesherFluidRenderer;
     private long lastUpdateTick;
     private WorldMesh mesh;
@@ -47,9 +44,9 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
 
     protected AreaProvider(Pair<BlockPos, BlockPos> data) {
         super(data);
-        this.client = MinecraftClient.getInstance();
+        this.client = Minecraft.getInstance();
         //TODO fix this argh
-        this.lastUpdateTick = this.client.world.getTime();
+        this.lastUpdateTick = this.client.level.getGameTime();
         this.worldMesherFluidRenderer = new WorldMesherFluidRenderer();
         invalidateCache();
     }
@@ -64,10 +61,10 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
 
     @Override
     @Environment(EnvType.CLIENT)
-    public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+    public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-        if (client.world.getTime() - lastUpdateTick > 160) {
-            lastUpdateTick = client.world.getTime();
+        if (client.level.getGameTime() - lastUpdateTick > 160) {
+            lastUpdateTick = client.level.getGameTime();
             mesh.scheduleRebuild();
         }
 
@@ -76,33 +73,33 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             matrices.scale(0.5f, 0.5f, 0.5f);
             matrices.translate(-0.5, 0, -0.5);
             matrices.translate(0, 0.65, 0);
-            TextProvider.drawText(matrices, be, 0, Text.of("§b[§aScanning§b]"), immediate);
+            TextProvider.drawText(matrices, be, 0, Component.nullToEmpty("§b[§aScanning§b]"), immediate);
         } else {
-            matrices.push();
+            matrices.pushPose();
             matrices.translate(0.5, 0.5, 0.5);
 
             if(entity.spinEnabled()) {
-                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
+                matrices.mulPose(Axis.YP.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d))); //Rotate Speed
             } else {
-                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(entity.getRotation()));
+                matrices.mulPose(Axis.YP.rotationDegrees(entity.getRotation()));
             }
 
             matrices.scale(0.075f, 0.075f, 0.075f); //TODO make this usable with scaling sliders
 
-            int xSize = (int) (mesh.dimensions().getXLength() + 1);
-            int zSize = (int) (mesh.dimensions().getZLength() + 1);
+            int xSize = (int) (mesh.dimensions().getXsize() + 1);
+            int zSize = (int) (mesh.dimensions().getZsize() + 1);
 
             matrices.translate(-xSize / 2f, 0, -zSize / 2f); //TODO make this usable with translation sliders
 
             mesh.render(matrices);
-            matrices.pop();
+            matrices.popPose();
         }
     }
 
     @Environment(EnvType.CLIENT)
     public void invalidateCache() {
-        assert MinecraftClient.getInstance().world != null;
-        mesh = new WorldMesh.Builder(MinecraftClient.getInstance().world, data.getLeft(), data.getRight())
+        assert Minecraft.getInstance().level != null;
+        mesh = new WorldMesh.Builder(Minecraft.getInstance().level, data.getLeft(), data.getRight())
                 .renderActions(HologramRenderLayer.beginAction, HologramRenderLayer.endAction)
                 .build();
         if (mesh.state() == WorldMesh.MeshState.CORRUPT) return;
@@ -115,8 +112,8 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     }
 
     @Override
-    public NbtCompound write(ProjectorBlockEntity be) {
-        final NbtCompound tag = new NbtCompound();
+    public CompoundTag write(ProjectorBlockEntity be) {
+        final CompoundTag tag = new CompoundTag();
 
         tag.putLong("Start", data.getLeft().asLong());
         tag.putLong("End", data.getRight().asLong());
@@ -125,9 +122,9 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     }
 
     @Override
-    public void read(NbtCompound tag, ProjectorBlockEntity be) {
-        BlockPos start = BlockPos.fromLong(tag.getLong("Start"));
-        BlockPos end = BlockPos.fromLong(tag.getLong("End"));
+    public void read(CompoundTag tag, ProjectorBlockEntity be) {
+        BlockPos start = BlockPos.of(tag.getLong("Start"));
+        BlockPos end = BlockPos.of(tag.getLong("End"));
 
         if (!(start.equals(data.getLeft()) && end.equals(data.getRight()))) {
             this.data = Pair.of(start, end);
@@ -136,7 +133,7 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     }
 
     @Override
-    public Identifier getTypeId() {
+    public ResourceLocation getTypeId() {
         return ID;
     }
 }

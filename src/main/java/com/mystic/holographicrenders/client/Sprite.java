@@ -1,10 +1,14 @@
 package com.mystic.holographicrenders.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.screen.Overlay;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.render.*;
-import net.minecraft.util.Identifier;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
@@ -17,7 +21,7 @@ public interface Sprite {
     public int getHeight();
 
     @NotNull
-    public Identifier getTexture();
+    public ResourceLocation getTexture();
 
     public float getUSize();
 
@@ -42,23 +46,23 @@ public interface Sprite {
         float r = (color >> 16 & 255) / 255.0F;
         float g = (color >> 8 & 255) / 255.0F;
         float b = (color & 255) / 255.0F;
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
+        Tesselator tessellator = Tesselator.getInstance();
+        BufferBuilder buffer = tessellator.getBuilder();
         Matrix4f model = matrix;
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
         RenderSystem.setShaderTexture(0, getTexture());
         RenderSystem.setShaderColor(r, g, b, 1.0f);
-        RenderSystem.setShader(GameRenderer::getPositionTexProgram);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
 
         float u1 = minU(frame), v1 = minV(frame), u2 = maxU(frame), v2 = maxV(frame);
 
-        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE);
-        buffer.vertex(model, x,         y + height, 0).texture(u1, v2).next();
-        buffer.vertex(model, x + width, y + height, 0).texture(u2, v2).next();
-        buffer.vertex(model, x + width, y,          0).texture(u2, v1).next();
-        buffer.vertex(model, x,         y,          0).texture(u1, v1).next();
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        buffer.vertex(model, x,         y + height, 0).uv(u1, v2).endVertex();
+        buffer.vertex(model, x + width, y + height, 0).uv(u2, v2).endVertex();
+        buffer.vertex(model, x + width, y,          0).uv(u2, v1).endVertex();
+        buffer.vertex(model, x,         y,          0).uv(u1, v1).endVertex();
+        BufferUploader.drawWithShader(buffer.end());
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
     }

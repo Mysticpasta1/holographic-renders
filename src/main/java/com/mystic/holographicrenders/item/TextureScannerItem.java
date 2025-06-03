@@ -1,44 +1,44 @@
 package com.mystic.holographicrenders.item;
 
 import com.mystic.holographicrenders.Common;
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 
 public class TextureScannerItem extends Item {
 
     public TextureScannerItem() {
-        super(new Settings().maxCount(1));
+        super(new Properties().stacksTo(1));
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
-        ItemStack itemStack = player.getStackInHand(hand);
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack itemStack = player.getItemInHand(hand);
 
-        if (world.isClient && Common.textScreenRunnable != null) {
+        if (world.isClientSide && Common.textScreenRunnable != null) {
             Common.textScreenRunnable.accept(hand);
         }
 
-        return TypedActionResult.success(itemStack);
+        return InteractionResultHolder.success(itemStack);
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        NbtCompound tag = stack.getOrCreateNbt();
+    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
+        CompoundTag tag = stack.getOrCreateTag();
         if(tag.contains("URL")) {
-            tooltip.add(Text.literal("URL: ").formatted(Formatting.GREEN).append(Text.literal(tag.getString("URL")).formatted(Formatting.YELLOW)));
+            tooltip.add(Component.literal("URL: ").withStyle(ChatFormatting.GREEN).append(Component.literal(tag.getString("URL")).withStyle(ChatFormatting.YELLOW)));
         } else {
-            tooltip.add(Text.literal("Empty"));
+            tooltip.add(Component.literal("Empty"));
         }
     }
 }

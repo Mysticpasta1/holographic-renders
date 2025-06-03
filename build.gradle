@@ -1,6 +1,7 @@
 plugins {
     id "dev.architectury.loom" version "1.10-SNAPSHOT"
     id "maven-publish"
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 base {
@@ -42,7 +43,6 @@ loom {
 
 repositories {
     mavenCentral()
-    maven { url 'https://mvnrepository.com/artifact/org.jsoup/jsoup' }
     maven { url 'https://jitpack.io' }
     maven {
         name = "CottonMC"
@@ -57,35 +57,50 @@ repositories {
             includeGroup "curse.maven"
         }
     }
-    maven {
-        url "https://maven.su5ed.dev/releases"
-    }
 }
 
 dependencies {
-    // Normal mod deps
+    // to change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    mappings loom.officialMojangMappings()
     forge "net.minecraftforge:forge:${project.forge_version}"
 
-    modImplementation "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
-    include "com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"
+    modImplementation (include("com.github.Mysticpasta1:worldmesher:${project.worldmesher_version}"))
 
-    include(implementation 'com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7')
-
-    implementation "org.jsoup:jsoup:1.20.1"
-    include "org.jsoup:jsoup:1.20.1"
-
-    modImplementation('com.github.GenerationsMod.LibGui:LibGui-forge:2512e46638') {
+    minecraftLibraries(include("org.jsoup:jsoup:1.20.1")) {
         transitive = false
     }
-    include('com.github.GenerationsMod.LibGui:LibGui-forge:2512e46638') {
+    shadow("com.github.rtyley:animated-gif-lib-for-java:animated-gif-lib-1.7") {
         transitive = false
     }
+    modImplementation(include("com.github.GenerationsMod.LibGui:LibGui-forge:2d369d1838")) {
+        transitive = false
+    }
+    minecraftLibraries(include('org.apache.xmlgraphics:batik-transcoder:1.17')) {\
+        transitive = false
+    }
+    minecraftLibraries(include('org.apache.xmlgraphics:batik-codec:1.17')) {
+        transitive = false
+    }
+    minecraftLibraries(include('org.apache.xmlgraphics:batik-dom:1.17')) {
+        transitive = false
+    }
+    minecraftLibraries(include('org.apache.xmlgraphics:batik-svggen:1.17')) {
+        transitive = false
+    }
+    minecraftLibraries(include('org.apache.xmlgraphics:batik-parser:1.17')) {
+        transitive = false
+    }
+    minecraftLibraries(include('org.apache.xmlgraphics:batik-awt-util:1.17')) {
+        transitive = false
+    }
+    minecraftLibraries(include('org.jcodec:jcodec:0.2.5'))
 
+    compileOnly(annotationProcessor("io.github.llamalad7:mixinextras-common:0.4.1"))
+    implementation(include("io.github.llamalad7:mixinextras-forge:0.4.1"))
     modImplementation "curse.maven:architectury-api-419699:5137938"
-    modCompileOnly "dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1"
-    modRuntimeOnly "dev.su5ed.sinytra.fabric-api:fabric-api:0.91.0+1.10.8+1.20.1"
+    modCompileOnly("dev.su5ed.sinytra.fabric-api:fabric-api:0.92.2+1.11.12+1.20.1")
+    modRuntimeOnly("dev.su5ed.sinytra.fabric-api:fabric-api:0.92.2+1.11.12+1.20.1")
 }
 
 processResources {
@@ -97,11 +112,19 @@ processResources {
     filesMatching("META-INF/mods.toml") {
         expand "version": project.version
     }
+}
 
-    from('libs') {
-        include 'LibGui-9.2.1.jar'
-        into 'META-INF/jarjar/'
-    }
+shadowJar {
+    archiveClassifier.set("") // overwrite default jar
+
+    relocate 'com.madgag', 'com.mysticpasta.shadowed.madgag'
+
+    // Optional: include only the library and your classes
+    configurations = [project.configurations.shadow]
+}
+
+remapJar {
+    input.set(jar.archiveFile)
 }
 
 tasks.withType(JavaCompile) {
@@ -133,7 +156,11 @@ jar {
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
+
+    dependsOn shadowJar
 }
+
+build.dependsOn shadowJar
 
 // configure the maven publication
 publishing {
@@ -151,4 +178,3 @@ publishing {
         // retrieving dependencies.
     }
 }
-

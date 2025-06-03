@@ -2,31 +2,28 @@ package com.mystic.holographicrenders.client;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mystic.holographicrenders.HolographicRenders;
-import com.mystic.holographicrenders.mixin.VertexConsumerProviderImmediateAccessor;
-import io.wispforest.worldmesher.WorldMesh;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexConsumerProvider;
-
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 
-public class HologramRenderLayer extends RenderLayer {
+public class HologramRenderLayer extends RenderType {
 
     //TODO refactor this and make it not shit
 
-    private static final Map<RenderLayer, RenderLayer> remappedTypes = new IdentityHashMap<>();
+    private static final Map<RenderType, RenderType> remappedTypes = new IdentityHashMap<>();
     private static float alpha = 0.6f;
 
     public static final Runnable beginAction = () -> {
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        RenderSystem.blendFunc(GlStateManager.SrcFactor.SRC_ALPHA, GlStateManager.DstFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         RenderSystem.setShaderColor(1, 1, 1, alpha); //TODO check my math! (redAlpha = 0 = ON), (redAlpha = 15 = OFF) //TODO fix this so only on is doing this at a time!!!
     };
 
@@ -40,17 +37,17 @@ public class HologramRenderLayer extends RenderLayer {
         HologramRenderLayer.alpha = alpha;
     }
 
-    private HologramRenderLayer(RenderLayer original) {
-        super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.getVertexFormat(), original.getDrawMode(), original.getExpectedBufferSize(), original.hasCrumbling(), true, () -> {
-            original.startDrawing();
+    private HologramRenderLayer(RenderType original) {
+        super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.format(), original.mode(), original.bufferSize(), original.affectsCrumbling(), true, () -> {
+            original.setupRenderState();
             beginAction.run();
         }, () -> {
             endAction.run();
-            original.endDrawing();
+            original.clearRenderState();
         });
     }
 
-    public static RenderLayer remap(RenderLayer in) {
+    public static RenderType remap(RenderType in) {
         if (in instanceof HologramRenderLayer) {
             return in;
         } else {
@@ -58,44 +55,44 @@ public class HologramRenderLayer extends RenderLayer {
         }
     }
 
-    public static VertexConsumerProvider.Immediate initBuffers(VertexConsumerProvider.Immediate original) {
-        Map<RenderLayer, BufferBuilder> layerBuffers = ((VertexConsumerProviderImmediateAccessor) original).getLayerBuffers();
-        Map<RenderLayer, BufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
-        for (Map.Entry<RenderLayer, BufferBuilder> e : layerBuffers.entrySet()) {
-            remapped.put(HologramRenderLayer.remap(e.getKey()), new BufferBuilder(e.getKey().getExpectedBufferSize()));
+    public static MultiBufferSource.BufferSource initBuffers(MultiBufferSource.BufferSource original) {
+        Map<RenderType, BufferBuilder> layerBuffers = original.fixedBuffers;
+        Map<RenderType, BufferBuilder> remapped = new Object2ObjectLinkedOpenHashMap<>();
+        for (Map.Entry<RenderType, BufferBuilder> e : layerBuffers.entrySet()) {
+            remapped.put(HologramRenderLayer.remap(e.getKey()), new BufferBuilder(e.getKey().bufferSize()));
         }
         return new HologramVertexConsumerProvider(new BufferBuilder(256), remapped);
     }
 
-    public static class HologramVertexConsumerProvider extends VertexConsumerProvider.Immediate {
+    public static class HologramVertexConsumerProvider extends MultiBufferSource.BufferSource {
 
-        protected HologramVertexConsumerProvider(BufferBuilder fallback, Map<RenderLayer, BufferBuilder> layerBuffers) {
+        protected HologramVertexConsumerProvider(BufferBuilder fallback, Map<RenderType, BufferBuilder> layerBuffers) {
             super(fallback, layerBuffers);
         }
 
         @Override
-        public VertexConsumer getBuffer(RenderLayer type) {
+        public VertexConsumer getBuffer(RenderType type) {
 
             type = HologramRenderLayer.remap(type);
 
-            Optional<RenderLayer> optional = type.asOptional();
-            BufferBuilder bufferBuilder = this.layerBuffers.getOrDefault(type, this.fallbackBuffer);
+            Optional<RenderType> optional = type.asOptional();
+            BufferBuilder bufferBuilder = this.fixedBuffers.getOrDefault(type, this.builder);
 
-            if (!Objects.equals(this.currentLayer, optional)) {
-                if (this.currentLayer.isPresent()) {
-                    RenderLayer renderLayer2 = this.currentLayer.get();
-                    if (!this.layerBuffers.containsKey(renderLayer2)) {
-                        this.draw(renderLayer2);
+            if (!Objects.equals(this.lastState, optional)) {
+                if (this.lastState.isPresent()) {
+                    RenderType renderLayer2 = this.lastState.get();
+                    if (!this.fixedBuffers.containsKey(renderLayer2)) {
+                        this.endBatch(renderLayer2);
                     }
                 }
 
-                if (this.activeConsumers.add(bufferBuilder)) {
-                    if (!bufferBuilder.isBuilding()) {
-                        bufferBuilder.begin(type.getDrawMode(), type.getVertexFormat());
+                if (this.startedBuffers.add(bufferBuilder)) {
+                    if (!bufferBuilder.building()) {
+                        bufferBuilder.begin(type.mode(), type.format());
                     }
                 }
 
-                this.currentLayer = optional;
+                this.lastState = optional;
             }
 
             return bufferBuilder;

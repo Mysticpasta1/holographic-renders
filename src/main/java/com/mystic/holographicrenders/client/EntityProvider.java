@@ -1,33 +1,32 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.EntityRenderDispatcher;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.world.World;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import java.util.function.Function;
 
 public class EntityProvider extends RenderDataProvider<Entity> {
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "entity");
-    private NbtCompound entityTag = null;
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "entity");
+    private CompoundTag entityTag = null;
 
     protected EntityProvider(Entity data) {
         super(data);
         if (data == null) return;
-        entityTag = new NbtCompound();
-        data.saveSelfNbt(entityTag);
+        entityTag = new CompoundTag();
+        data.saveAsPassenger(entityTag);
     }
 
     public static com.mystic.holographicrenders.client.EntityProvider from(Entity entity) {
@@ -36,42 +35,42 @@ public class EntityProvider extends RenderDataProvider<Entity> {
 
     @Override
     @Environment(EnvType.CLIENT)
-    public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+    public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
-        if (!tryLoadEntity(MinecraftClient.getInstance().world)) return;
+        if (!tryLoadEntity(Minecraft.getInstance().level)) return;
 
         matrices.translate(0.5, 0.75, 0.5);
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
+        matrices.mulPose(Axis.YP.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
         matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
 
-        final EntityRenderDispatcher entityRenderDispatcher = MinecraftClient.getInstance().getEntityRenderDispatcher();
-        entityRenderDispatcher.setRenderShadows(false);
+        final EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
+        entityRenderDispatcher.setRenderShadow(false);
         entityRenderDispatcher.render(data, 0, 0, 0, 0, 0, matrices, immediate, light);
-        entityRenderDispatcher.setRenderShadows(true);
+        entityRenderDispatcher.setRenderShadow(true);
     }
 
-    private boolean tryLoadEntity(World world) {
+    private boolean tryLoadEntity(Level world) {
         if (data != null) return true;
         if (world == null) return false;
-        data = EntityType.loadEntityWithPassengers(entityTag, world, Function.identity());
+        data = EntityType.loadEntityRecursive(entityTag, world, Function.identity());
         return data != null;
     }
 
     @Override
-    public NbtCompound write(ProjectorBlockEntity be) {
-        NbtCompound tag = new NbtCompound();
+    public CompoundTag write(ProjectorBlockEntity be) {
+        CompoundTag tag = new CompoundTag();
         tag.put("Entity", entityTag);
         return tag;
     }
 
     @Override
-    public void read(NbtCompound tag, ProjectorBlockEntity be) {
+    public void read(CompoundTag tag, ProjectorBlockEntity be) {
         entityTag = tag.getCompound("Entity");
         data = null;
     }
 
     @Override
-    public Identifier getTypeId() {
+    public ResourceLocation getTypeId() {
         return ID;
     }
 }

@@ -1,24 +1,22 @@
 package com.mystic.holographicrenders.blocks.projector;
 
-import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.*;
 import com.mystic.holographicrenders.item.AreaScannerItem;
 import com.mystic.holographicrenders.item.EntityScannerItem;
 
 import com.mystic.holographicrenders.item.TextureScannerItem;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.FilledMapItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.MapItem;
 
 public class ItemProjectionHandler {
 
@@ -26,20 +24,20 @@ public class ItemProjectionHandler {
 
     static {
         registerBehaviour(stack -> stack.getItem() instanceof EntityScannerItem, (be, stack) -> {
-            if (!stack.getOrCreateNbt().contains("Entity")) return EmptyProvider.INSTANCE;
+            if (!stack.getOrCreateTag().contains("Entity")) return EmptyProvider.INSTANCE;
             EntityType<?> type = ((EntityScannerItem) stack.getItem()).getEntityType(stack);
             if (type == null) return EmptyProvider.INSTANCE;
-            Entity entity = type.create(be.getWorld());
-            entity.readNbt(stack.getOrCreateNbt().getCompound("Entity"));
-            entity.updatePosition(be.getPos().getX(), be.getPos().getY(), be.getPos().getZ());
+            Entity entity = type.create(be.getLevel());
+            entity.load(stack.getOrCreateTag().getCompound("Entity"));
+            entity.absMoveTo(be.getBlockPos().getX(), be.getBlockPos().getY(), be.getBlockPos().getZ());
             return EntityProvider.from(entity);
         });
 
         registerBehaviour(stack -> stack.getItem() instanceof AreaScannerItem, (be, stack) -> {
-            NbtCompound tag = stack.getOrCreateNbt();
+            CompoundTag tag = stack.getOrCreateTag();
             if (tag.contains("Pos1") && tag.contains("Pos2")) {
-                BlockPos pos1 = BlockPos.fromLong(tag.getLong("Pos1"));
-                BlockPos pos2 = BlockPos.fromLong(tag.getLong("Pos2"));
+                BlockPos pos1 = BlockPos.of(tag.getLong("Pos1"));
+                BlockPos pos2 = BlockPos.of(tag.getLong("Pos2"));
                 try {
                     return AreaProvider.from(pos1, pos2);
                 } catch (ExecutionException ignored) {
@@ -53,7 +51,7 @@ public class ItemProjectionHandler {
 
         registerBehaviour(stack -> stack.getItem() instanceof TextureScannerItem, (be, stack) -> {
             try {
-                return TextureProvider.of(be.getStack(0).getOrCreateNbt().getString("URL"));
+                return TextureProvider.of(be.getItem(0).getOrCreateTag().getString("URL"));
             } catch (ExecutionException e) {
                 return EmptyProvider.INSTANCE;
             }
@@ -68,12 +66,12 @@ public class ItemProjectionHandler {
  //     });
 
         registerBehaviour(itemStack -> itemStack.getItem() == Items.FILLED_MAP, (be, stack) -> {
-            return MapProvider.of(FilledMapItem.getMapId(stack));
+            return MapProvider.of(MapItem.getMapId(stack));
         });
 
-        registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> BlockProvider.from(((BlockItem) stack.getItem()).getBlock().getDefaultState()));
+        registerBehaviour(stack -> stack.getItem() instanceof BlockItem, (be, stack) -> BlockProvider.from(((BlockItem) stack.getItem()).getBlock().defaultBlockState()));
 
-        registerBehaviour(stack -> stack.getItem() == Items.NAME_TAG, (be, stack) -> TextProvider.from(stack.getName()));
+        registerBehaviour(stack -> stack.getItem() == Items.NAME_TAG, (be, stack) -> TextProvider.from(stack.getHoverName()));
     }
 
     /**

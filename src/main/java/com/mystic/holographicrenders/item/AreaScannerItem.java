@@ -1,81 +1,81 @@
 package com.mystic.holographicrenders.item;
 
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
 
 public class AreaScannerItem extends Item {
     public AreaScannerItem() {
-        super(new Settings().maxCount(1));
+        super(new Properties().stacksTo(1));
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        ItemStack itemstack = context.getStack();
-        NbtCompound tag = itemstack.getOrCreateNbt();
+    public InteractionResult useOn(UseOnContext context) {
+        ItemStack itemstack = context.getItemInHand();
+        CompoundTag tag = itemstack.getOrCreateTag();
 
         if (tag.contains("Pos2")) {
-            return ActionResult.PASS;
+            return InteractionResult.PASS;
         }
 
         if (tag.contains("Pos1")) {
-            tag.putLong("Pos2", context.getBlockPos().asLong());
+            tag.putLong("Pos2", context.getClickedPos().asLong());
         } else {
-            tag.putLong("Pos1", context.getBlockPos().asLong());
+            tag.putLong("Pos1", context.getClickedPos().asLong());
         }
 
-        return ActionResult.SUCCESS;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
 
-        ItemStack itemstack = player.getStackInHand(hand);
-        NbtCompound tag = itemstack.getOrCreateNbt();
+        ItemStack itemstack = player.getItemInHand(hand);
+        CompoundTag tag = itemstack.getOrCreateTag();
 
-        if (!player.isSneaking()) return TypedActionResult.pass(itemstack);
+        if (!player.isShiftKeyDown()) return InteractionResultHolder.pass(itemstack);
 
         tag.remove("Pos1");
         tag.remove("Pos2");
 
-        return TypedActionResult.success(itemstack);
+        return InteractionResultHolder.success(itemstack);
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
 
-        List<Text> newLines = new ArrayList<>();
+        List<Component> newLines = new ArrayList<>();
 
-        NbtCompound tag = stack.getOrCreateNbt();
+        CompoundTag tag = stack.getOrCreateTag();
 
         if (tag.contains("Pos1")) {
-            BlockPos pos = BlockPos.fromLong(tag.getLong("Pos1"));
-            newLines.add(Text.of("§7Start Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
+            BlockPos pos = BlockPos.of(tag.getLong("Pos1"));
+            newLines.add(Component.nullToEmpty("§7Start Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
         }
 
         if (tag.contains("Pos2")) {
-            BlockPos pos = BlockPos.fromLong(tag.getLong("Pos2"));
-            newLines.add(Text.of("§7End Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
+            BlockPos pos = BlockPos.of(tag.getLong("Pos2"));
+            newLines.add(Component.nullToEmpty("§7End Position: §8[§b" + pos.getX() + " " + pos.getY() + " " + pos.getZ() + "§8]"));
         }
 
         if (newLines.isEmpty()) {
-            newLines.add(Text.of("§7Blank"));
+            newLines.add(Component.nullToEmpty("§7Blank"));
         } else if (newLines.size() == 2) {
-            newLines.add(Text.of(""));
-            newLines.add(Text.of("§aReady to project!"));
+            newLines.add(Component.nullToEmpty(""));
+            newLines.add(Component.nullToEmpty("§aReady to project!"));
         }
 
         tooltip.addAll(newLines);

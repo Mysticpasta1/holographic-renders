@@ -1,22 +1,22 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.model.json.ModelTransformationMode;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class ItemProvider extends RenderDataProvider<ItemStack> {
 
-    public static final Identifier ID = Identifier.fromNamespaceAndPath(HolographicRenders.MOD_ID, "item");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "item");
 
     protected ItemProvider(ItemStack data) {
         super(data);
@@ -28,31 +28,31 @@ public class ItemProvider extends RenderDataProvider<ItemStack> {
 
     @Override
     @Environment(EnvType.CLIENT)
-    public void render(MatrixStack matrices, VertexConsumerProvider.Immediate immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+    public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
 
         matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
         //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
-        matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
+        matrices.mulPose(Axis.YP.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
 
-        MinecraftClient.getInstance().getItemRenderer().renderItem(data, ModelTransformationMode.GROUND, light, overlay, matrices, immediate, null, 0); //TODO: FIX
+        Minecraft.getInstance().getItemRenderer().renderStatic(data, ItemDisplayContext.GROUND, light, overlay, matrices, immediate, null, 0); //TODO: FIX
     }
 
     @Override
-    public NbtCompound write(ProjectorBlockEntity be) {
-        NbtCompound tag = new NbtCompound();
-        NbtCompound itemTag = new NbtCompound();
-        data.writeNbt(itemTag);
+    public CompoundTag write(ProjectorBlockEntity be) {
+        CompoundTag tag = new CompoundTag();
+        CompoundTag itemTag = new CompoundTag();
+        data.save(itemTag);
         tag.put("Item", itemTag);
         return tag;
     }
 
     @Override
-    public void read(NbtCompound tag, ProjectorBlockEntity be) {
-        data = ItemStack.fromNbt(tag.getCompound("Item"));
+    public void read(CompoundTag tag, ProjectorBlockEntity be) {
+        data = ItemStack.of(tag.getCompound("Item"));
     }
 
     @Override
-    public Identifier getTypeId() {
+    public ResourceLocation getTypeId() {
         return ID;
     }
 }
