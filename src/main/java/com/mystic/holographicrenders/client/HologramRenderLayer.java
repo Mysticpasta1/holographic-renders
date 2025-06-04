@@ -18,7 +18,7 @@ public class HologramRenderLayer extends RenderType {
     //TODO refactor this and make it not shit
 
     private static final Map<RenderType, RenderType> remappedTypes = new IdentityHashMap<>();
-    private static float alpha = 0.6f;
+    private static float alpha = 1.0f;
 
     public static final Runnable beginAction = () -> {
         RenderSystem.enableBlend();
@@ -38,10 +38,7 @@ public class HologramRenderLayer extends RenderType {
     }
 
     private HologramRenderLayer(RenderType original) {
-        super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.format(), original.mode(), original.bufferSize(), original.affectsCrumbling(), true, () -> {
-            original.setupRenderState();
-            beginAction.run();
-        }, () -> {
+        super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.format(), original.mode(), original.bufferSize(), original.affectsCrumbling(), true, original::setupRenderState, () -> {
             endAction.run();
             original.clearRenderState();
         });

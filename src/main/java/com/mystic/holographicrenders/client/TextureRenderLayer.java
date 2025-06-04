@@ -35,10 +35,7 @@ public class TextureRenderLayer extends RenderType {
 
 
     TextureRenderLayer(RenderType original) {
-        super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.format(), original.mode(), original.bufferSize(), original.affectsCrumbling(), true, () -> {
-            original.setupRenderState();
-            beginAction.run();
-        }, () -> {
+        super(String.format("%s_%s_hologram", original.toString(), HolographicRenders.MOD_ID), original.format(), original.mode(), original.bufferSize(), original.affectsCrumbling(), true, original::setupRenderState, () -> {
             endAction.run();
             original.clearRenderState();
         });

@@ -271,14 +271,25 @@ public class TextureProvider extends RenderDataProvider<ResourceLocation> {
         return Pair.of(id, (Sprite) sprite);
     }
 
-    private static int convertColor(int argb) {
-        int a = (argb >> 24) & 0xFF;
-        int r = (argb >> 16) & 0xFF;
-        int g = (argb >> 8) & 0xFF;
-        int b = argb & 0xFF;
-        return (r << 24) | (g << 16) | (b << 8) | a;
+    public static int convertColor(int color) {
+        return (getAlpha(color) & 255) << 24 | (getBlue(color) & 255) << 16 | (getGreen(color) & 255) << 8 | (getRed(color) & 255);
     }
 
+    public static int getAlpha(int color) {
+        return (color >> 24) & 0xFF;
+    }
+
+    public static int getRed(int color) {
+        return (color >> 16) & 0xFF;
+    }
+
+    public static int getGreen(int color) {
+        return (color >> 8) & 0xFF;
+    }
+
+    public static int getBlue(int color) {
+        return color & 0xFF;
+    }
 
     public static GifDecoder getFrames(InputStream gif) throws IOException {
         GifDecoder decoder = new GifDecoder();
