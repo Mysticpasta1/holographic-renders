@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "holographic_renders:projector"
+          "name": "holographic_renders:iron_projector"
         }
       ],
       "conditions": [

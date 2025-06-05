@@ -2,11 +2,11 @@
 	"parent": "block/block",
 	"credit": "Made with Blockbench",
 	"textures": {
-		"0": "holographic_renders:block/projector/texture2",
-		"1": "holographic_renders:block/projector/texture3",
-		"2": "holographic_renders:block/projector/texture4",
-		"3": "holographic_renders:block/projector/texture1",
-		"particle": "holographic_renders:block/projector/texture2"
+		"0": "holographic_renders:block/iron_projector/texture2",
+		"1": "holographic_renders:block/iron_projector/texture3",
+		"2": "holographic_renders:block/iron_projector/texture4",
+		"3": "holographic_renders:block/iron_projector/texture1",
+		"particle": "holographic_renders:block/iron_projector/texture2"
 	},
 	"elements": [
 		{

@@ -43,6 +43,12 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
         matrices.translate(-0.5, -0.5, -0.5);
 
         AreaProvider.setEntity(entity);
+        BlockProvider.setEntity(entity);
+        EntityProvider.setEntity(entity);
+        ItemProvider.setEntity(entity);
+        MapProvider.setEntity(entity);
+        TextProvider.setEntity(entity);
+        TextureProvider.setEntity(entity);
 
         if (entity.lightsEnabled()) {
             matrices.pushPose();

@@ -3,6 +3,7 @@ package com.mystic.holographicrenders.client;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -34,6 +35,8 @@ public class MapProvider extends RenderDataProvider<Integer> {
                 }
             });
 
+    private static ProjectorBlockEntity entity;
+
     protected MapProvider(Integer id) {
         super(id);
     }
@@ -46,10 +49,16 @@ public class MapProvider extends RenderDataProvider<Integer> {
         }
     }
 
+    public static void setEntity(ProjectorBlockEntity entity) {
+        MapProvider.entity = entity;
+    }
+
     @Override
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
         matrices.pushPose();
+        RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         matrices.scale(0.1f, -0.1f, 0.1f);
         matrices.translate(5, -20, 5);
 
@@ -63,13 +72,17 @@ public class MapProvider extends RenderDataProvider<Integer> {
 
         matrices.translate(-7.5, 0, 0);
 
+        RenderSystem.setShaderColor(1,1,1, entity.getAlpha());
+
         MapItemSavedData state = MapItem.getSavedData(data, be.getLevel());
         if (state != null) {
             matrices.scale(0.125f, 0.125f, 0.125f);
             Minecraft.getInstance().gameRenderer.getMapRenderer().render(matrices, immediate, data, state, false, light);
         }
 
+        RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
         matrices.popPose();
     }
 

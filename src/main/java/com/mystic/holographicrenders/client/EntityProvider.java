@@ -1,6 +1,11 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
@@ -8,18 +13,25 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
+import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.renderable.ITextureRenderTypeLookup;
+
+import java.util.Map;
 import java.util.function.Function;
 
 public class EntityProvider extends RenderDataProvider<Entity> {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "entity");
+    private static ProjectorBlockEntity entity;
     private CompoundTag entityTag = null;
 
     protected EntityProvider(Entity data) {
@@ -33,20 +45,35 @@ public class EntityProvider extends RenderDataProvider<Entity> {
         return new com.mystic.holographicrenders.client.EntityProvider(entity);
     }
 
+    public static void setEntity(ProjectorBlockEntity entity) {
+        EntityProvider.entity = entity;
+    }
+
     @Override
     @Environment(EnvType.CLIENT)
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
-
+        RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.setShaderColor(1,1,1, entity.getAlpha());
         if (!tryLoadEntity(Minecraft.getInstance().level)) return;
-
         matrices.translate(0.5, 0.75, 0.5);
         matrices.mulPose(Axis.YP.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
-        matrices.scale(0.5f, 0.5f, 0.5f); //TODO make this usable with scaling sliders
-
+        matrices.scale(0.5f, 0.5f, 0.5f);
         final EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         entityRenderDispatcher.setRenderShadow(false);
-        entityRenderDispatcher.render(data, 0, 0, 0, 0, 0, matrices, immediate, light);
+        EntityRenderer<? super Entity> renderer = entityRenderDispatcher.getRenderer(data);
+        MultiBufferSource forcedBufferSource = renderType -> {
+            // Ignore incoming renderType and force my translucent buffer:
+            ResourceLocation texture1 = renderer.getTextureLocation(data);
+            RenderType forcedType = RenderType.entityTranslucent(texture1);
+            return immediate.getBuffer(forcedType);
+        };
+        entityRenderDispatcher.render(data, 0, 0, 0, 0, 0, matrices, forcedBufferSource, light);
         entityRenderDispatcher.setRenderShadow(true);
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
     }
 
     private boolean tryLoadEntity(Level world) {

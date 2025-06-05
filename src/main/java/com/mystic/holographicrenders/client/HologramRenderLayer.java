@@ -18,13 +18,13 @@ public class HologramRenderLayer extends RenderType {
     //TODO refactor this and make it not shit
 
     private static final Map<RenderType, RenderType> remappedTypes = new IdentityHashMap<>();
-    private static float alpha = 1.0f;
+    private static float alpha = 0.6f;
 
     public static final Runnable beginAction = () -> {
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
         RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        RenderSystem.setShaderColor(1, 1, 1, alpha); //TODO check my math! (redAlpha = 0 = ON), (redAlpha = 15 = OFF) //TODO fix this so only on is doing this at a time!!!
+        RenderSystem.setShaderColor(1, 1, 1, alpha); //TODO check my math! (redAlpha = 0 = OFF), (redAlpha = 15 = ON) //TODO fix this so only on is doing this at a time!!!
     };
 
     public static final Runnable endAction = () -> {

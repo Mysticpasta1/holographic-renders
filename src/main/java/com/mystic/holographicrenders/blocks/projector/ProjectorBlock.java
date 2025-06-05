@@ -16,17 +16,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -38,9 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.stream.Stream;
 
 public class ProjectorBlock extends BaseEntityBlock {
-
-    public static final DirectionProperty PROPERTY_FACING = BlockStateProperties.FACING;
-
+    public static final DirectionProperty FACING = BlockStateProperties.FACING;
     private static final VoxelShape[] SHAPES = {
             //NORTH
             Stream.of(
@@ -123,8 +117,8 @@ public class ProjectorBlock extends BaseEntityBlock {
     };
 
     public ProjectorBlock() {
-        super(Properties.copy(Blocks.IRON_BLOCK).noOcclusion());
-        this.registerDefaultState(this.getStateDefinition().any().setValue(PROPERTY_FACING, Direction.UP));
+        super(Properties.copy(Blocks.IRON_BLOCK).noOcclusion().lightLevel((state) -> 7));
+        this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.UP));
     }
 
     @Override
@@ -151,7 +145,7 @@ public class ProjectorBlock extends BaseEntityBlock {
     }
 
     public static Direction getFacing(@NotNull BlockState state) {
-        return state.getValue(PROPERTY_FACING);
+        return state.getValue(FACING);
     }
 
     @Override
@@ -179,22 +173,22 @@ public class ProjectorBlock extends BaseEntityBlock {
 
     @Override
     public BlockState rotate(BlockState state, Rotation rot) {
-        return state.setValue(PROPERTY_FACING, rot.rotate(state.getValue(PROPERTY_FACING)));
+        return state.setValue(FACING, rot.rotate(state.getValue(FACING)));
     }
 
     @Override
     public BlockState mirror(BlockState state, Mirror mirrorIn) {
-        return state.rotate(mirrorIn.getRotation(state.getValue(PROPERTY_FACING)));
+        return state.rotate(mirrorIn.getRotation(state.getValue(FACING)));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(PROPERTY_FACING);
+        builder.add(FACING);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(PROPERTY_FACING, context.getClickedFace());
+        return this.defaultBlockState().setValue(FACING, context.getClickedFace());
     }
 
     @Override
@@ -220,7 +214,7 @@ public class ProjectorBlock extends BaseEntityBlock {
 
     private void updateAlpha(Level world, BlockPos pos) {
         ProjectorBlockEntity be = (ProjectorBlockEntity) world.getBlockEntity(pos);
-        be.setAlpha(Math.max(0.15f, Math.min((15 - world.getBestNeighborSignal(pos)) / 15f, 0.75f)));
+        be.setAlpha(Math.max(0.01f, Math.min((15 - world.getBestNeighborSignal(pos)) / 15f, 1f)));
     }
 
     @Nullable

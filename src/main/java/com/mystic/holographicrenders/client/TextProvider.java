@@ -1,5 +1,7 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
@@ -19,6 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class TextProvider extends RenderDataProvider<Component> {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "text");
+    private static ProjectorBlockEntity entity;
 
     protected TextProvider(Component data) {
         super(data);
@@ -28,13 +31,22 @@ public class TextProvider extends RenderDataProvider<Component> {
         return new com.mystic.holographicrenders.client.TextProvider(text);
     }
 
+    public static void setEntity(ProjectorBlockEntity entity) {
+        TextProvider.entity = entity;
+    }
+
     @Override
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
         drawText(matrices, be, 0, data, immediate);
     }
 
     public static void drawText(PoseStack matrices, BlockEntity be, int color, Component text, MultiBufferSource.BufferSource immediate) {
+        RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         matrices.translate(0.5, 0.0, 0.5);
+
+        RenderSystem.setShaderColor(1,1,1, entity.getAlpha());
 
         Player player = Minecraft.getInstance().player;
         if (player != null) {
@@ -69,7 +81,10 @@ public class TextProvider extends RenderDataProvider<Component> {
         matrices.scale(0.05f, -0.05f, 0.05f); //TODO make this usable with scaling sliders
         matrices.translate(-(Minecraft.getInstance().font.width(text) / 2f), -20, 0); //TODO make this usable with translation sliders
 
-            Minecraft.getInstance().font.drawInBatch(text, 0, 0, color, false, matrices.last().pose(), immediate, Font.DisplayMode.SEE_THROUGH, 0, 0xf000f0); //TODO; fix this
+        Minecraft.getInstance().font.drawInBatch(text, 0, 0, color, false, matrices.last().pose(), immediate, Font.DisplayMode.SEE_THROUGH, 0, 0xf000f0); //TODO; fix this
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
     }
 
     @Override

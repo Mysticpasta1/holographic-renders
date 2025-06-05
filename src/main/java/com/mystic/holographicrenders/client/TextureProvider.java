@@ -5,12 +5,14 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
 import com.madgag.gif.fmsware.GifDecoder;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
+import net.minecraft.client.renderer.RenderType;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
@@ -66,6 +68,7 @@ public class TextureProvider extends RenderDataProvider<ResourceLocation> {
                     }
                 }
             });
+    private static ProjectorBlockEntity entity;
 
     private final Sprite sprite;
     private int tick = 0;
@@ -79,26 +82,32 @@ public class TextureProvider extends RenderDataProvider<ResourceLocation> {
         return cache.get(url);
     }
 
+    public static void setEntity(ProjectorBlockEntity entity) {
+        TextureProvider.entity = entity;
+    }
+
     @Override
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
         matrices.pushPose();
         matrices.scale(0.1f, -0.1f, 0.1f);
         matrices.translate(5, -20, 5);
+        RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         Player player = Minecraft.getInstance().player;
         double x = player.getX() - be.getBlockPos().getX() - 0.5;
         double z = player.getZ() - be.getBlockPos().getZ() - 0.5;
         float rot = (float) Mth.atan2(z, x);
-
         matrices.mulPose(Axis.YP.rotation(-rot));
         matrices.mulPose(Axis.YP.rotationDegrees(90));
 
         matrices.translate(-7.5, 0, 0);
 
         var matrix = matrices.last().pose();
-
-        sprite.render(immediate.getBuffer(TextureRenderLayer.translucent()), matrix, 0, 0, 16, 16, (int) ((Minecraft.getInstance().level.getGameTime() + tickDelta) * 50) % sprite.getFrameCount(), Color.WHITE);
+        sprite.render(immediate.getBuffer(RenderType.translucent()), matrix, 0, 0, 16, 16, (int) ((Minecraft.getInstance().level.getGameTime() + tickDelta) * 50) % sprite.getFrameCount(), Color.WHITE, entity);
+        RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
         matrices.popPose();
     }
 

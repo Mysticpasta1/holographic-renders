@@ -1,5 +1,7 @@
 package com.mystic.holographicrenders.client;
 
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
@@ -17,6 +19,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class ItemProvider extends RenderDataProvider<ItemStack> {
 
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "item");
+    private static ProjectorBlockEntity entity;
 
     protected ItemProvider(ItemStack data) {
         super(data);
@@ -26,15 +29,25 @@ public class ItemProvider extends RenderDataProvider<ItemStack> {
         return new com.mystic.holographicrenders.client.ItemProvider(stack);
     }
 
+    public static void setEntity(ProjectorBlockEntity entity) {
+        ItemProvider.entity = entity;
+    }
+
     @Override
     @Environment(EnvType.CLIENT)
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
+        RenderSystem.enableBlend();
+        RenderSystem.enableDepthTest();
+        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.setShaderColor(1,1,1, entity.getAlpha());
+        matrices.translate(0.5, 0.75, 0.5);
 
-        matrices.translate(0.5, 0.75, 0.5); //TODO make this usable with translation sliders
-        //matrices.scale(0.0f, 0.0f, 0.0f); //TODO make this usable with scaling sliders
         matrices.mulPose(Axis.YP.rotationDegrees((float) (System.currentTimeMillis() / 60d % 360d)));
 
         Minecraft.getInstance().getItemRenderer().renderStatic(data, ItemDisplayContext.GROUND, light, overlay, matrices, immediate, null, 0); //TODO: FIX
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
     }
 
     @Override

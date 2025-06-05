@@ -1,0 +1,30 @@
+{
+  "variants": {
+    "facing=down": {
+      "x": 180,
+      "model": "holographic_renders:block/iron_projector"
+    },
+    "facing=east": {
+      "x": 90,
+      "y": 90,
+      "model": "holographic_renders:block/iron_projector"
+    },
+    "facing=north": {
+      "x": 90,
+      "model": "holographic_renders:block/iron_projector"
+    },
+    "facing=south": {
+      "x": 90,
+      "y": 180,
+      "model": "holographic_renders:block/iron_projector"
+    },
+    "facing=up": {
+      "model": "holographic_renders:block/iron_projector"
+    },
+    "facing=west": {
+      "x": 90,
+      "y": 270,
+      "model": "holographic_renders:block/iron_projector"
+    }
+  }
+}

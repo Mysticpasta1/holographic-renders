@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
 
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(1, ItemStack.EMPTY);
-    private float alpha = 1;
+    private float alpha = 1f;
     private boolean lightEnabled = true;
     private boolean spinEnabled = true;
     private  RenderDataProvider<?> renderer = EmptyProvider.INSTANCE;
