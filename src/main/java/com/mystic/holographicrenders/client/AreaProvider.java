@@ -12,19 +12,10 @@ import io.wispforest.worldmesher.WorldMesh;
 import io.wispforest.worldmesher.renderers.WorldMesherFluidRenderer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRenderEvents;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.HangingSignRenderer;
-import net.minecraft.client.renderer.blockentity.SignRenderer;
-import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.SheepRenderer;
-import net.minecraft.client.renderer.entity.layers.ElytraLayer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -32,18 +23,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.animal.Sheep;
-import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.HangingSignBlockEntity;
-import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Pair;
-import org.joml.Vector3d;
 
-import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -86,7 +70,9 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     private <T extends BlockEntity> void renderBlockEntity(T entity, float partialTicks, PoseStack stack, MultiBufferSource bufferSource, int overlay, int light) {
         BlockEntityRenderer<T> blockEntityRenderer = client.getBlockEntityRenderDispatcher().getRenderer(entity);
         if (!(entity instanceof ProjectorBlockEntity)) {
-            blockEntityRenderer.render(entity, partialTicks, stack, bufferSource, light, overlay);
+            if(blockEntityRenderer != null) {
+                blockEntityRenderer.render(entity, partialTicks, stack, bufferSource, light, overlay);
+            }
         }
     }
 
