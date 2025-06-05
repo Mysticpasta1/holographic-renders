@@ -41,6 +41,11 @@ public class EntityProvider extends RenderDataProvider<Entity> {
         data.saveAsPassenger(entityTag);
     }
 
+    private <T extends Entity> void renderEntity(T entity, float partialTicks, PoseStack stack, MultiBufferSource bufferSource, int light) {
+        EntityRenderer<? super T> entityRenderer = Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(entity);
+        entityRenderer.render(entity, entity.getViewYRot(partialTicks), partialTicks, stack, bufferSource, light);
+    }
+
     public static com.mystic.holographicrenders.client.EntityProvider from(Entity entity) {
         return new com.mystic.holographicrenders.client.EntityProvider(entity);
     }
@@ -62,14 +67,7 @@ public class EntityProvider extends RenderDataProvider<Entity> {
         matrices.scale(0.5f, 0.5f, 0.5f);
         final EntityRenderDispatcher entityRenderDispatcher = Minecraft.getInstance().getEntityRenderDispatcher();
         entityRenderDispatcher.setRenderShadow(false);
-        EntityRenderer<? super Entity> renderer = entityRenderDispatcher.getRenderer(data);
-        MultiBufferSource forcedBufferSource = renderType -> {
-            // Ignore incoming renderType and force my translucent buffer:
-            ResourceLocation texture1 = renderer.getTextureLocation(data);
-            RenderType forcedType = RenderType.entityTranslucent(texture1);
-            return immediate.getBuffer(forcedType);
-        };
-        entityRenderDispatcher.render(data, 0, 0, 0, 0, 0, matrices, forcedBufferSource, light);
+        renderEntity(data,0, matrices, immediate, light);
         entityRenderDispatcher.setRenderShadow(true);
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
