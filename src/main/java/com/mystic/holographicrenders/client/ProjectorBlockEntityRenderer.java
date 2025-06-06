@@ -30,8 +30,6 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
             immediate = HologramRenderLayer.initBuffers(Minecraft.getInstance().renderBuffers().bufferSource());
         }
 
-        matrices.pushPose();
-
         Direction facing = ProjectorBlock.getFacing(entity.getBlockState());
 
         matrices.translate(facing.getStepX() * 0.55, facing.getStepY() * 0.55, facing.getStepZ() * 0.55);
@@ -42,6 +40,7 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
         matrices.mulPose(Axis.ZN.rotationDegrees(facing.getStepX() * 90));
         matrices.translate(-0.5, -0.5, -0.5);
 
+        // Set provider entities
         AreaProvider.setEntity(entity);
         BlockProvider.setEntity(entity);
         EntityProvider.setEntity(entity);
@@ -51,78 +50,76 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
         TextureProvider.setEntity(entity);
 
         if (entity.lightsEnabled()) {
-            matrices.pushPose();
-            RenderSystem.enableDepthTest();
-            final VertexConsumer buffer = vertexConsumers.getBuffer(RenderType.lightning());
-            final Matrix4f matrix4f = matrices.last().pose();
+            matrices.pushPose(); // Lights pose
+            try {
+                RenderSystem.enableDepthTest();
+                final VertexConsumer buffer = vertexConsumers.getBuffer(RenderType.lightning());
+                final Matrix4f matrix4f = matrices.last().pose();
 
-            final float r = 0.5f;
-            final float g = 0.5f;
-            final float b = 1;
+                final float r = 0.5f, g = 0.5f, b = 1;
+                final float bottomY = 0.3f, topY = 0.7f, startAlpha = 0.65f;
 
-            final float bottomY = 0.3f;
-            final float topY = 0.7f;
-            final float startAlpha = 0.65f;
+                // Lightning geometry
+                vertex(matrix4f, buffer, 0.1f, bottomY, 0.125f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.9f, bottomY, 0.125f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 1, topY, -0.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 0, topY, -0.25f, r, g, b, 0);
 
-            vertex(matrix4f, buffer, 0.1f, bottomY, 0.125f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.9f, bottomY, 0.125f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 1, topY, -0.25f, r, g, b, 0);
-            vertex(matrix4f, buffer, 0, topY, -0.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 0, topY, -0.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 1, topY, -0.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 0.9f, bottomY, 0.125f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.1f, bottomY, 0.125f, r, g, b, startAlpha);
 
-            vertex(matrix4f, buffer, 0, topY, -0.25f, r, g, b, 0);
-            vertex(matrix4f, buffer, 1, topY, -0.25f, r, g, b, 0);
-            vertex(matrix4f, buffer, 0.9f, bottomY, 0.125f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.1f, bottomY, 0.125f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.1f, bottomY, 0.875f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.9f, bottomY, 0.875f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 1, topY, 1.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 0, topY, 1.25f, r, g, b, 0);
 
+                vertex(matrix4f, buffer, 0, topY, 1.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 1, topY, 1.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 0.9f, bottomY, 0.875f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.1f, bottomY, 0.875f, r, g, b, startAlpha);
 
-            vertex(matrix4f, buffer, 0.1f, bottomY, 0.875f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.9f, bottomY, 0.875f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 1, topY, 1.25f, r, g, b, 0);
-            vertex(matrix4f, buffer, 0, topY, 1.25f, r, g, b, 0);
+                vertex(matrix4f, buffer, 0.875f, bottomY, 0.1f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.875f, bottomY, 0.9f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 1.25f, topY, 1, r, g, b, 0);
+                vertex(matrix4f, buffer, 1.25f, topY, 0, r, g, b, 0);
 
-            vertex(matrix4f, buffer, 0, topY, 1.25f, r, g, b, 0);
-            vertex(matrix4f, buffer, 1, topY, 1.25f, r, g, b, 0);
-            vertex(matrix4f, buffer, 0.9f, bottomY, 0.875f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.1f, bottomY, 0.875f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 1.25f, topY, 0, r, g, b, 0);
+                vertex(matrix4f, buffer, 1.25f, topY, 1, r, g, b, 0);
+                vertex(matrix4f, buffer, 0.875f, bottomY, 0.9f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.875f, bottomY, 0.1f, r, g, b, startAlpha);
 
+                vertex(matrix4f, buffer, 0.125f, bottomY, 0.1f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.125f, bottomY, 0.9f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, -0.25f, topY, 1, r, g, b, 0);
+                vertex(matrix4f, buffer, -0.25f, topY, 0, r, g, b, 0);
 
-            vertex(matrix4f, buffer, 0.875f, bottomY, 0.1f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.875f, bottomY, 0.9f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 1.25f, topY, 1, r, g, b, 0);
-            vertex(matrix4f, buffer, 1.25f, topY, 0, r, g, b, 0);
+                vertex(matrix4f, buffer, -0.25f, topY, 0, r, g, b, 0);
+                vertex(matrix4f, buffer, -0.25f, topY, 1, r, g, b, 0);
+                vertex(matrix4f, buffer, 0.125f, bottomY, 0.9f, r, g, b, startAlpha);
+                vertex(matrix4f, buffer, 0.125f, bottomY, 0.1f, r, g, b, startAlpha);
 
-            vertex(matrix4f, buffer, 1.25f, topY, 0, r, g, b, 0);
-            vertex(matrix4f, buffer, 1.25f, topY, 1, r, g, b, 0);
-            vertex(matrix4f, buffer, 0.875f, bottomY, 0.9f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.875f, bottomY, 0.1f, r, g, b, startAlpha);
-
-
-            vertex(matrix4f, buffer, 0.125f, bottomY, 0.1f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.125f, bottomY, 0.9f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, -0.25f, topY, 1, r, g, b, 0);
-            vertex(matrix4f, buffer, -0.25f, topY, 0, r, g, b, 0);
-
-            vertex(matrix4f, buffer, -0.25f, topY, 0, r, g, b, 0);
-            vertex(matrix4f, buffer, -0.25f, topY, 1, r, g, b, 0);
-            vertex(matrix4f, buffer, 0.125f, bottomY, 0.9f, r, g, b, startAlpha);
-            vertex(matrix4f, buffer, 0.125f, bottomY, 0.1f, r, g, b, startAlpha);
-            RenderSystem.disableDepthTest();
-            matrices.popPose();
+                RenderSystem.disableDepthTest();
+            } finally {
+                matrices.popPose(); // Always pop lights pose
+            }
         }
 
         if (entity.getAlpha() != 0) {
-            HologramRenderLayer.setAlpha(entity.getAlpha());
-            matrices.pushPose();
-
+            matrices.pushPose(); // Projection pose
             try {
+                HologramRenderLayer.setAlpha(entity.getAlpha());
                 ItemProjectionHandler.getDataProvider(entity, entity.getItem()).render(matrices, immediate, tickDelta, light, overlay, entity);
-            } catch (MalformedURLException ignored) {}
-
-            immediate.endBatch();
-            matrices.popPose();
+                immediate.endBatch();
+            } catch (MalformedURLException ignored) {
+                // Consider logging or handling for debugging purposes
+            } finally {
+                matrices.popPose(); // Always pop projection pose
+            }
         }
-        matrices.popPose();
     }
+
 
 
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {

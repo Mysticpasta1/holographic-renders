@@ -23,11 +23,15 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.apache.commons.lang3.tuple.Pair;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -49,6 +53,8 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     private long lastUpdateTick;
     private WorldMesh mesh;
     private static ProjectorBlockEntity entity;
+    private final Set<Integer> renderedEntityIds = new HashSet<>();
+    private final Set<BlockPos> renderedBlockEntityPositions = new HashSet<>();
 
     protected AreaProvider(Pair<BlockPos, BlockPos> data) {
         super(data);
@@ -67,18 +73,53 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
         AreaProvider.entity = entity;
     }
 
-    private <T extends BlockEntity> void renderBlockEntity(T entity, float partialTicks, PoseStack stack, MultiBufferSource bufferSource, int overlay, int light) {
-        BlockEntityRenderer<T> blockEntityRenderer = client.getBlockEntityRenderDispatcher().getRenderer(entity);
-        if (!(entity instanceof ProjectorBlockEntity)) {
-            if(blockEntityRenderer != null) {
-                blockEntityRenderer.render(entity, partialTicks, stack, bufferSource, light, overlay);
-            }
+    private <T extends BlockEntity> void renderBlockEntity(
+            T blockEntity, float partialTicks, PoseStack poseStack,
+            MultiBufferSource bufferSource, int overlay, int light) {
+
+        if (blockEntity == null
+                || blockEntity instanceof ProjectorBlockEntity
+                || renderedBlockEntityPositions.contains(blockEntity.getBlockPos())) return;
+
+        BlockEntityRenderer<T> renderer = client.getBlockEntityRenderDispatcher().getRenderer(blockEntity);
+
+        if (renderer != null) {
+            renderedBlockEntityPositions.add(blockEntity.getBlockPos());
+            renderer.render(blockEntity, partialTicks, poseStack, bufferSource, light, overlay);
         }
     }
 
-    private <T extends Entity> void renderEntity(T entity, float partialTicks, PoseStack stack, MultiBufferSource bufferSource, int light) {
-        EntityRenderer<? super T> entityRenderer = client.getEntityRenderDispatcher().getRenderer(entity);
-        entityRenderer.render(entity, entity.getViewYRot(partialTicks), partialTicks, stack, bufferSource, light);
+    private <T extends Entity> void renderEntity(
+            T entity, float partialTicks, PoseStack poseStack,
+            MultiBufferSource bufferSource, int light) {
+
+        if (entity == null || renderedEntityIds.contains(entity.getId())) return;
+
+        // Only render if the entity is alive
+        if (!entity.isAlive()) return;
+
+        // Extra safeguard for ItemEntity (e.g. dropped items)
+        if (entity instanceof ItemEntity itemEntity) {
+            ItemStack stack = itemEntity.getItem();
+
+            // Prevent crash on null or empty ItemStack
+            if (stack == null || stack.isEmpty()) return;
+        }
+
+        EntityRenderer<? super T> renderer = client.getEntityRenderDispatcher().getRenderer(entity);
+
+        if (renderer != null) {
+            renderedEntityIds.add(entity.getId());
+
+            float yaw = entity.getViewYRot(partialTicks);
+
+            try {
+                renderer.render(entity, yaw, partialTicks, poseStack, bufferSource, light);
+            } catch (Exception e) {
+                System.err.println("Error rendering entity: " + entity.getClass().getName());
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -98,6 +139,9 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             TextProvider.drawText(matrices, be, 0, Component.nullToEmpty("§b[§aScanning§b]"), immediate);
             RenderSystem.disableDepthTest();
         } else {
+            renderedEntityIds.clear();
+            renderedBlockEntityPositions.clear();
+
             matrices.translate(0.5, 0.5, 0.5);
 
             if (entity.spinEnabled()) {
