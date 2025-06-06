@@ -10,6 +10,7 @@ import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import org.joml.Matrix4f;
 
 import java.net.MalformedURLException;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -22,18 +23,17 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
     private static MultiBufferSource.BufferSource immediate;
 
 
-    public ProjectorBlockEntityRenderer(BlockEntityRendererProvider.Context ctx) { }
+    public ProjectorBlockEntityRenderer(BlockEntityRendererProvider.Context ctx) {
+    }
 
     @Override
     public void render(ProjectorBlockEntity entity, float tickDelta, PoseStack matrices, MultiBufferSource vertexConsumers, int light, int overlay) {
         if (immediate == null) {
-            immediate = HologramRenderLayer.initBuffers(Minecraft.getInstance().renderBuffers().bufferSource());
+            immediate = Minecraft.getInstance().renderBuffers().bufferSource();
         }
 
         Direction facing = ProjectorBlock.getFacing(entity.getBlockState());
-
         matrices.translate(facing.getStepX() * 0.55, facing.getStepY() * 0.55, facing.getStepZ() * 0.55);
-
         matrices.translate(0.5, 0.5, 0.5);
         matrices.mulPose(Axis.XN.rotationDegrees(facing.getStepY() == -1 ? 180 : 0));
         matrices.mulPose(Axis.XP.rotationDegrees(facing.getStepZ() * 90));
@@ -50,7 +50,6 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
         TextureProvider.setEntity(entity);
 
         if (entity.lightsEnabled()) {
-            matrices.pushPose(); // Lights pose
             RenderSystem.enableDepthTest();
             final VertexConsumer buffer = vertexConsumers.getBuffer(RenderType.lightning());
             final Matrix4f matrix4f = matrices.last().pose();
@@ -100,12 +99,10 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
             vertex(matrix4f, buffer, 0.125f, bottomY, 0.1f, r, g, b, startAlpha);
 
             RenderSystem.disableDepthTest();
-            matrices.popPose();
         }
 
         if (entity.getAlpha() != 0) {
             try {
-                HologramRenderLayer.setAlpha(entity.getAlpha());
                 ItemProjectionHandler.getDataProvider(entity, entity.getItem()).render(matrices, immediate, tickDelta, light, overlay, entity);
                 immediate.endBatch();
             } catch (MalformedURLException ignored) {
@@ -114,10 +111,7 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
         }
     }
 
-
-
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {
         buffer.vertex(matrix, x, y, z).color(r, g, b, a).endVertex();
     }
-
 }

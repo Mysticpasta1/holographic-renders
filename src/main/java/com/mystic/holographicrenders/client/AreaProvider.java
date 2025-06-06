@@ -139,6 +139,7 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             TextProvider.drawText(matrices, be, 0, Component.nullToEmpty("§b[§aScanning§b]"), immediate);
             RenderSystem.disableDepthTest();
         } else {
+            RenderSystem.enableDepthTest();
             renderedEntityIds.clear();
             renderedBlockEntityPositions.clear();
 
@@ -205,6 +206,7 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             }
 
             mesh.render(matrices);
+            RenderSystem.disableDepthTest();
         }
     }
 
@@ -225,7 +227,6 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     public void invalidateCache() {
         assert Minecraft.getInstance().level != null;
         mesh = new WorldMesh.Builder(Minecraft.getInstance().level, data.getLeft(), data.getRight())
-                .renderActions(HologramRenderLayer.beginAction, HologramRenderLayer.endAction)
                 .build();
         if (mesh.state() == WorldMesh.MeshState.CORRUPT) return;
         rebuild();

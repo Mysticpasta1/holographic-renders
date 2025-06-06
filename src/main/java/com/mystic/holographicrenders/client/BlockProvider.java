@@ -10,6 +10,7 @@ import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -65,19 +66,20 @@ public class BlockProvider extends RenderDataProvider<BlockState> {
 
         matrices.translate(-0.5, 0, -0.5);
 
+        RenderType type = ItemBlockRenderTypes.getRenderType(data, true);
+
         if (data.getBlock() instanceof BaseEntityBlock baseEntityBlock) {
             BlockEntity blockEntity = baseEntityBlock.newBlockEntity(BlockPos.ZERO, data);
             if (blockEntity != null) {
                 blockEntity.setLevel(Minecraft.getInstance().level);
                 renderBlockEntity(blockEntity, 0, matrices, immediate, overlay, light);
-                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(data, matrices, immediate, light, overlay, ModelData.builder().build(), RenderType.solid());
+                Minecraft.getInstance().getBlockRenderer().renderSingleBlock(data, matrices, immediate, light, overlay, ModelData.builder().build(), type);
             }
         } else {
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(data, matrices, immediate, light, overlay, ModelData.builder().build(), RenderType.translucent());
+            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(data, matrices, immediate, light, overlay, ModelData.builder().build(), type);
         }
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
-        RenderSystem.disableBlend();
     }
 
     @Override
