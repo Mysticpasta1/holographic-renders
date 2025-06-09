@@ -45,10 +45,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(AreaProvider.ID, () -> new AreaProvider(Pair.of(BlockPos.ZERO, BlockPos.ZERO)));
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Component.nullToEmpty("")));
-        RenderDataProviderRegistry.register(TextureProvider.ID, () -> {
-            ResourceLocation id = ResourceLocation.withDefaultNamespace("missingno");
-            return new TextureProvider(id, new RegularSprite(id, 16,16));
-        });
+        RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(""));
         RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(-1));
     }
 

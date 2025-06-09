@@ -4,6 +4,7 @@ import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.EmptyProvider;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
+import com.mystic.holographicrenders.client.TextureProvider;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
@@ -25,6 +26,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.concurrent.ExecutionException;
 
 public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
 

@@ -1,15 +1,10 @@
 package com.mystic.holographicrenders.client;
 
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
-
 public class RegularSprite implements Sprite {
-    private final ResourceLocation id;
     private final int width;
     private final int height;
 
-    public RegularSprite(ResourceLocation id, int width, int height) {
-        this.id = id;
+    public RegularSprite(int width, int height) {
         this.width = width;
         this.height = height;
     }
@@ -22,12 +17,6 @@ public class RegularSprite implements Sprite {
     @Override
     public int getHeight() {
         return height;
-    }
-
-    @NotNull
-    @Override
-    public ResourceLocation getTexture() {
-        return id;
     }
 
     @Override

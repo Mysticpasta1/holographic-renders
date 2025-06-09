@@ -9,7 +9,6 @@ import com.mystic.holographicrenders.gui.TextboxScreen;
 import com.mystic.holographicrenders.network.LightPacket;
 import com.mystic.holographicrenders.network.RotatePacket;
 import com.mystic.holographicrenders.network.SpinPacket;
-import io.github.cottonmc.cotton.gui.client.CottonClientScreen;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.screenhandler.v1.ScreenRegistry;
 import net.minecraft.client.Minecraft;

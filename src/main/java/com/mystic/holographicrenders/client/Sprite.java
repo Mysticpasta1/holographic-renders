@@ -21,9 +21,6 @@ public interface Sprite {
 
     public int getHeight();
 
-    @NotNull
-    public ResourceLocation getTexture();
-
     public float getUSize();
 
     public float getVSize();
@@ -38,7 +35,7 @@ public interface Sprite {
 
     public float maxV(int animFrames);
 
-    default void render(VertexConsumer immediate, Matrix4f matrix, int x, int y, int width, int height, int frame, Color white, ProjectorBlockEntity be) {
+    default void render(VertexConsumer immediate, int texture, Matrix4f matrix, int x, int y, int width, int height, int frame, Color white, ProjectorBlockEntity be) {
         if (width <= 0) width = 1;
         if (height <= 0) height = 1;
 
@@ -53,7 +50,7 @@ public interface Sprite {
         Matrix4f model = matrix;
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        RenderSystem.setShaderTexture(0, getTexture());
+        RenderSystem.setShaderTexture(0, texture);
         RenderSystem.setShaderColor(r, g, b, a);
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
 
