@@ -1,14 +1,11 @@
 package com.mystic.holographicrenders.blocks.projector;
 
-import com.mystic.holographicrenders.network.LightPacket;
-import com.mystic.holographicrenders.network.RotatePacket;
-import com.mystic.holographicrenders.network.SpinPacket;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import com.mojang.serialization.MapCodec;
+import com.mystic.holographicrenders.network.ProjectorPackets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -22,12 +19,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -117,7 +114,7 @@ public class ProjectorBlock extends BaseEntityBlock {
     };
 
     public ProjectorBlock() {
-        super(Properties.copy(Blocks.IRON_BLOCK).noOcclusion().lightLevel((state) -> 7));
+        super(Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion().lightLevel((state) -> 7));
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.UP));
     }
 
@@ -149,26 +146,40 @@ public class ProjectorBlock extends BaseEntityBlock {
     }
 
     @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return simpleCodec(properties1 -> new ProjectorBlock());
+    }
+
+    @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
-        if (world.isClientSide) return InteractionResult.SUCCESS;
-
-        ExtendedScreenHandlerFactory screenHandlerFactory = (ExtendedScreenHandlerFactory) state.getMenuProvider(world, pos);
-        ProjectorBlockEntity be = (ProjectorBlockEntity) screenHandlerFactory;
-
-        if (screenHandlerFactory != null) {
-            player.openMenu(screenHandlerFactory);
-            ((ServerPlayer) player).connection.send(LightPacket.createUpdate(be.lightsEnabled()));
-            ((ServerPlayer) player).connection.send(SpinPacket.createUpdate(be.spinEnabled()));
-            ((ServerPlayer) player).connection.send(RotatePacket.createUpdate(be.getRotation()));
+    public InteractionResult useWithoutItem(BlockState state,
+                                            Level level,
+                                            BlockPos pos,
+                                            Player player,
+                                            BlockHitResult hit) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
         }
 
-        return InteractionResult.SUCCESS;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof ProjectorBlockEntity projector)) {
+            return InteractionResult.PASS;
+        }
+
+        if (player instanceof ServerPlayer serverPlayer) {
+            // This is the important part: pass the BE (MenuProvider) + write BlockPos to buf
+            serverPlayer.openMenu(projector, buf -> buf.writeBlockPos(pos));
+
+            PacketDistributor.sendToPlayer(serverPlayer, new ProjectorPackets.UpdateLight(projector.lightsEnabled()));
+            PacketDistributor.sendToPlayer(serverPlayer, new ProjectorPackets.UpdateSpin(projector.spinEnabled()));
+            PacketDistributor.sendToPlayer(serverPlayer, new ProjectorPackets.UpdateRotate(projector.getRotation()));
+        }
+
+        return InteractionResult.CONSUME;
     }
 
     @Override

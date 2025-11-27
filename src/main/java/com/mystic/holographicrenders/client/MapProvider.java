@@ -9,9 +9,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import java.net.MalformedURLException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.nbt.CompoundTag;
@@ -20,64 +17,89 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.MapItem;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 
-public class MapProvider extends RenderDataProvider<Integer> {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "map");
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
-    private static final LoadingCache<Integer, com.mystic.holographicrenders.client.MapProvider> cache = CacheBuilder.newBuilder()
+public class MapProvider extends RenderDataProvider<MapId> {
+
+    public static final ResourceLocation ID =
+            ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "map");
+    private static ProjectorBlockEntity entity;
+
+    private static final LoadingCache<MapId, MapProvider> CACHE = CacheBuilder.newBuilder()
             .maximumSize(20)
             .expireAfterAccess(20, TimeUnit.SECONDS)
-            .build(new CacheLoader<Integer, com.mystic.holographicrenders.client.MapProvider>() {
+            .build(new CacheLoader<>() {
                 @Override
-                public com.mystic.holographicrenders.client.MapProvider load(Integer key) {
-                    return new com.mystic.holographicrenders.client.MapProvider(key);
+                public MapProvider load(MapId key) {
+                    return new MapProvider(key);
                 }
             });
 
-    private static ProjectorBlockEntity entity;
-
-    protected MapProvider(Integer id) {
+    protected MapProvider(MapId id) {
         super(id);
-    }
-
-    public static RenderDataProvider<?> of(Integer id) {
-        try {
-            return cache.get(id);
-        } catch (ExecutionException e) {
-            return new com.mystic.holographicrenders.client.MapProvider(-1);
-        }
     }
 
     public static void setEntity(ProjectorBlockEntity entity) {
         MapProvider.entity = entity;
     }
 
+    public static RenderDataProvider<?> of(MapId id) {
+        try {
+            return CACHE.get(id);
+        } catch (ExecutionException e) {
+            return new MapProvider(new MapId(-1));
+        }
+    }
+
     @Override
-    public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException {
+    public void render(PoseStack matrices,
+                       MultiBufferSource.BufferSource immediate,
+                       float tickDelta,
+                       int light,
+                       int overlay,
+                       BlockEntity be) {
+
+        if (!(be instanceof ProjectorBlockEntity projector)) {
+            return;
+        }
+
+        Player player = Minecraft.getInstance().player;
+        if (player == null || be.getLevel() == null) {
+            return;
+        }
+
         matrices.pushPose();
+
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
-        RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        RenderSystem.blendFunc(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+        );
+
         matrices.scale(0.1f, -0.1f, 0.1f);
         matrices.translate(5, -20, 5);
 
-        Player player = Minecraft.getInstance().player;
-        double x = player.getX() - be.getBlockPos().getX() - 0.5;
-        double z = player.getZ() - be.getBlockPos().getZ() - 0.5;
-        float rot = (float) Mth.atan2(z, x);
+        double dx = player.getX() - be.getBlockPos().getX() - 0.5;
+        double dz = player.getZ() - be.getBlockPos().getZ() - 0.5;
+        float rot = (float) Mth.atan2(dz, dx);
 
         matrices.mulPose(Axis.YP.rotation(-rot));
         matrices.mulPose(Axis.YP.rotationDegrees(90));
-
         matrices.translate(-7.5, 0, 0);
 
-        RenderSystem.setShaderColor(1,1,1, entity.getAlpha());
+        RenderSystem.setShaderColor(1f, 1f, 1f, projector.getAlpha());
 
         MapItemSavedData state = MapItem.getSavedData(data, be.getLevel());
         if (state != null) {
             matrices.scale(0.125f, 0.125f, 0.125f);
-            Minecraft.getInstance().gameRenderer.getMapRenderer().render(matrices, immediate, data, state, false, light);
+            Minecraft.getInstance().gameRenderer
+                    .getMapRenderer()
+                    .render(matrices, immediate, data, state, false, light);
         }
 
         RenderSystem.defaultBlendFunc();
@@ -88,14 +110,15 @@ public class MapProvider extends RenderDataProvider<Integer> {
 
     @Override
     protected CompoundTag write(ProjectorBlockEntity be) {
-        final CompoundTag tag = new CompoundTag();
-        tag.putInt("Id", data);
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("Id", data.id());
         return tag;
     }
 
     @Override
     protected void read(CompoundTag tag, ProjectorBlockEntity be) {
-        this.data = tag.getInt("Id");
+        int id = tag.getInt("Id");
+        this.data = new MapId(id);
     }
 
     @Override

@@ -1,10 +1,7 @@
 package com.mystic.holographicrenders.item;
 
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -14,8 +11,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class AreaScannerItem extends Item {
     public AreaScannerItem() {
@@ -24,42 +25,51 @@ public class AreaScannerItem extends Item {
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        ItemStack itemstack = context.getItemInHand();
-        CompoundTag tag = itemstack.getOrCreateTag();
+        ItemStack stack = context.getItemInHand();
+        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
 
-        if (tag.contains("Pos2")) {
+        if (!data.isEmpty() && data.copyTag().contains("Pos2")) {
             return InteractionResult.PASS;
         }
 
-        if (tag.contains("Pos1")) {
-            tag.putLong("Pos2", context.getClickedPos().asLong());
-        } else {
-            tag.putLong("Pos1", context.getClickedPos().asLong());
-        }
+        BlockPos clickedPos = context.getClickedPos();
+
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, nbt -> {
+            if (nbt.contains("Pos2")) {
+                return;
+            }
+            if (nbt.contains("Pos1")) {
+                nbt.putLong("Pos2", clickedPos.asLong());
+            } else {
+                nbt.putLong("Pos1", clickedPos.asLong());
+            }
+        });
 
         return InteractionResult.SUCCESS;
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-        ItemStack itemstack = player.getItemInHand(hand);
-        CompoundTag tag = itemstack.getOrCreateTag();
+        if (!player.isShiftKeyDown()) {
+            return InteractionResultHolder.pass(stack);
+        }
 
-        if (!player.isShiftKeyDown()) return InteractionResultHolder.pass(itemstack);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, nbt -> {
+            nbt.remove("Pos1");
+            nbt.remove("Pos2");
+        });
 
-        tag.remove("Pos1");
-        tag.remove("Pos2");
-
-        return InteractionResultHolder.success(itemstack);
+        return InteractionResultHolder.success(stack);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
-
+    public void appendHoverText(ItemStack stack, TooltipContext tooltipContext, List<Component> tooltip, TooltipFlag context) {
         List<Component> newLines = new ArrayList<>();
 
-        CompoundTag tag = stack.getOrCreateTag();
+        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        CompoundTag tag = data.isEmpty() ? new CompoundTag() : data.copyTag();
 
         if (tag.contains("Pos1")) {
             BlockPos pos = BlockPos.of(tag.getLong("Pos1"));

@@ -14,18 +14,19 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4f;
 
 import java.awt.*;
+import java.util.Objects;
 
 public interface Sprite {
 
     int getFrameCount();
 
-    public int getHeight();
+    public int height();
 
     public float getUSize();
 
     public float getVSize();
 
-    public int getWidth();
+    public int width();
 
     public float minU(int animFrames);
 
@@ -46,7 +47,6 @@ public interface Sprite {
         float b = (color & 255) / 255.0F;
         float a = be.getAlpha();
         Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder buffer = tessellator.getBuilder();
         Matrix4f model = matrix;
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
@@ -56,12 +56,12 @@ public interface Sprite {
 
         float u1 = minU(frame), v1 = minV(frame), u2 = maxU(frame), v2 = maxV(frame);
 
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        buffer.vertex(model, x,         y + height, 0).uv(u1, v2).endVertex();
-        buffer.vertex(model, x + width, y + height, 0).uv(u2, v2).endVertex();
-        buffer.vertex(model, x + width, y,          0).uv(u2, v1).endVertex();
-        buffer.vertex(model, x,         y,          0).uv(u1, v1).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
+        BufferBuilder builder = tessellator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        builder.addVertex(model,x,y + height,0).setUv(u1, v2);
+        builder.addVertex(model,x + width, y + height,0).setUv(u2, v2);
+        builder.addVertex(model,x + width, y,0).setUv(u2, v1);
+        builder.addVertex(model, x, y,0).setUv(u1, v1);
+        BufferUploader.drawWithShader(Objects.requireNonNull(builder.build()));
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
     }

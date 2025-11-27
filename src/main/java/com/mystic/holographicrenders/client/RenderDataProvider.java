@@ -2,8 +2,6 @@ package com.mystic.holographicrenders.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -12,6 +10,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.net.MalformedURLException;
@@ -26,7 +27,7 @@ public abstract class RenderDataProvider<T> {
         this.data = data;
     }
 
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public abstract void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) throws MalformedURLException;
 
     public void toTag(CompoundTag tag, ProjectorBlockEntity be) {
@@ -46,7 +47,7 @@ public abstract class RenderDataProvider<T> {
         RenderDataProviderRegistry.register(EmptyProvider.ID, () -> EmptyProvider.INSTANCE);
         RenderDataProviderRegistry.register(TextProvider.ID, () -> new TextProvider(Component.nullToEmpty("")));
         RenderDataProviderRegistry.register(TextureProvider.ID, () -> new TextureProvider(""));
-        RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(-1));
+        RenderDataProviderRegistry.register(MapProvider.ID, () -> new MapProvider(new MapId(-1)));
     }
 
     protected abstract CompoundTag write(ProjectorBlockEntity be);

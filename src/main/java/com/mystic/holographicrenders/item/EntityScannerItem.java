@@ -1,11 +1,11 @@
 package com.mystic.holographicrenders.item;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.*;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,47 +28,92 @@ public class EntityScannerItem extends Item {
     }
 
     @Nullable
-    public EntityType<?> getEntityType(ItemStack stack){
-        return BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(stack.getOrCreateTag().getCompound("Entity").getString("id"))).orElse(null);
+    public EntityType<?> getEntityType(ItemStack stack) {
+        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (data.isEmpty()) return null;
+
+        CompoundTag tag = data.copyTag();
+        String id = tag.getString("EntityId"); // we will store this below
+        if (id.isEmpty()) return null;
+
+        return BuiltInRegistries.ENTITY_TYPE
+                .getOptional(ResourceLocation.tryParse(id))
+                .orElse(null);
+    }
+
+    private static boolean hasEntityData(ItemStack stack) {
+        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (data.isEmpty()) return false;
+        return data.copyTag().contains("Entity");
     }
 
     @Override
-    public InteractionResult interactLivingEntity(ItemStack stack, Player user, LivingEntity entity, InteractionHand hand) {
+    public InteractionResult interactLivingEntity(ItemStack stack,
+                                                  Player user,
+                                                  LivingEntity entity,
+                                                  InteractionHand hand) {
 
-        CompoundTag stackTag = user.getItemInHand(hand).getOrCreateTag();
-        if (stackTag.contains("Entity")) return InteractionResult.PASS;
+        if (hasEntityData(stack)) {
+            return InteractionResult.PASS;
+        }
 
-        CompoundTag entityTag = new CompoundTag();
-        entity.saveAsPassenger(entityTag);
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, nbt -> {
+            CompoundTag entityTag = new CompoundTag();
+            // save full entity data
+            entity.save(entityTag);
+            nbt.put("Entity", entityTag);
 
-        stackTag.put("Entity", entityTag);
+            // also store type id explicitly
+            ResourceLocation typeId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+            if (typeId != null) {
+                nbt.putString("EntityId", typeId.toString());
+            }
+        });
+
+        // make sure the modified stack is back in the player’s hand
+        user.setItemInHand(hand, stack);
 
         return InteractionResult.sidedSuccess(user.level().isClientSide);
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level world, Player user, InteractionHand hand) {
-        final ItemStack stack = user.getItemInHand(hand);
+    public InteractionResultHolder<ItemStack> use(Level level, Player user, InteractionHand hand) {
+        ItemStack stack = user.getItemInHand(hand);
+
         if (user.isShiftKeyDown()) {
-            if (stack.getOrCreateTag().contains("Entity")) {
-                stack.getOrCreateTag().remove("Entity");
-                return InteractionResultHolder.success(stack);
-            }
+            CustomData.update(DataComponents.CUSTOM_DATA, stack, nbt -> {
+                nbt.remove("Entity");
+                nbt.remove("EntityId");
+            });
+            user.setItemInHand(hand, stack);
+            return InteractionResultHolder.success(stack);
         }
+
         return InteractionResultHolder.success(stack);
     }
 
-
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level world, List<Component> tooltip, TooltipFlag context) {
-        CompoundTag stackTag = stack.getOrCreateTag();
+    public void appendHoverText(ItemStack stack,
+                                TooltipContext tooltipContext,
+                                List<Component> tooltip,
+                                TooltipFlag tooltipFlag) {
 
-        if (stackTag.contains("Entity")) {
-            BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(stackTag.getCompound("Entity").getString("id"))).ifPresent(entityType -> {
-                tooltip.add(Component.literal("§7Entity: ").append(Component.nullToEmpty(entityType.getDescriptionId())).withStyle(ChatFormatting.AQUA));
+        CustomData data = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+
+        if (!data.isEmpty() && data.copyTag().contains("EntityId")) {
+            CompoundTag tag = data.copyTag();
+            String id = tag.getString("EntityId");
+
+            BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.tryParse(id)).ifPresent(entityType -> {
+                Component name = entityType.getDescription();
+                tooltip.add(
+                        Component.literal("Entity: ")
+                                .append(name)
+                                .withStyle(ChatFormatting.AQUA)
+                );
             });
         } else {
-            tooltip.add(Component.literal("§7Blank"));
+            tooltip.add(Component.literal("Blank").withStyle(ChatFormatting.GRAY));
         }
     }
 }

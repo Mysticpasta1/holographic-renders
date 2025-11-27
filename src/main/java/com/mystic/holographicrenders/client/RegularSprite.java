@@ -1,22 +1,10 @@
 package com.mystic.holographicrenders.client;
 
-public class RegularSprite implements Sprite {
-    private final int width;
-    private final int height;
-
-    public RegularSprite(int width, int height) {
-        this.width = width;
-        this.height = height;
-    }
+public record RegularSprite(int width, int height) implements Sprite {
 
     @Override
     public int getFrameCount() {
         return 1;
-    }
-
-    @Override
-    public int getHeight() {
-        return height;
     }
 
     @Override
@@ -27,11 +15,6 @@ public class RegularSprite implements Sprite {
     @Override
     public float getVSize() {
         return 1.0f;
-    }
-
-    @Override
-    public int getWidth() {
-        return width;
     }
 
     @Override

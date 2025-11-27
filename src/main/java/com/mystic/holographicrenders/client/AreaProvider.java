@@ -8,11 +8,11 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
+import io.wispforest.worldmesher.DynamicRenderInfo;
 import io.wispforest.worldmesher.WorldMesh;
-import io.wispforest.worldmesher.renderers.WorldMesherFluidRenderer;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -22,18 +22,25 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Matrix4f;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static com.mojang.text2speech.Narrator.LOGGER;
 
 public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     private static final LoadingCache<Pair<BlockPos, BlockPos>, AreaProvider> cache = CacheBuilder.newBuilder()
@@ -41,7 +48,7 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
             .expireAfterAccess(5, TimeUnit.SECONDS)
             .build(new CacheLoader<>() {
                 @Override
-                public AreaProvider load(Pair<BlockPos, BlockPos> key) {
+                public @NotNull AreaProvider load(Pair<BlockPos, BlockPos> key) {
                     return new AreaProvider(key);
                 }
             });
@@ -49,7 +56,6 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "area");
 
     private final Minecraft client;
-    private final WorldMesherFluidRenderer worldMesherFluidRenderer;
     private long lastUpdateTick;
     private WorldMesh mesh;
     private static ProjectorBlockEntity entity;
@@ -59,9 +65,7 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
     protected AreaProvider(Pair<BlockPos, BlockPos> data) {
         super(data);
         this.client = Minecraft.getInstance();
-        //TODO fix this argh
         this.lastUpdateTick = this.client.level.getGameTime();
-        this.worldMesherFluidRenderer = new WorldMesherFluidRenderer();
         invalidateCache();
     }
 
@@ -89,48 +93,15 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
         }
     }
 
-    private <T extends Entity> void renderEntity(
-            T entity, float partialTicks, PoseStack poseStack,
-            MultiBufferSource bufferSource, int light) {
-
-        if (entity == null || renderedEntityIds.contains(entity.getId())) return;
-
-        // Only render if the entity is alive
-        if (!entity.isAlive()) return;
-
-        // Extra safeguard for ItemEntity (e.g. dropped items)
-        if (entity instanceof ItemEntity itemEntity) {
-            ItemStack stack = itemEntity.getItem();
-
-            // Prevent crash on null or empty ItemStack
-            if (stack == null || stack.isEmpty()) return;
-        }
-
-        EntityRenderer<? super T> renderer = client.getEntityRenderDispatcher().getRenderer(entity);
-
-        if (renderer != null) {
-            renderedEntityIds.add(entity.getId());
-
-            float yaw = entity.getViewYRot(partialTicks);
-
-            try {
-                renderer.render(entity, yaw, partialTicks, poseStack, bufferSource, light);
-            } catch (Exception e) {
-                System.err.println("Error rendering entity: " + entity.getClass().getName());
-                e.printStackTrace();
-            }
-        }
-    }
-
     @Override
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
         if (client.level.getGameTime() - lastUpdateTick > 160) {
             lastUpdateTick = client.level.getGameTime();
             mesh.scheduleRebuild();
         }
 
-        if (!mesh.canRender()) {
+        if (!mesh.state.canRender) {
             RenderSystem.enableDepthTest();
             matrices.translate(0.5, 0, 0.5);
             matrices.scale(0.5f, 0.5f, 0.5f);
@@ -167,44 +138,6 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
                 matrices.popPose();
             });
 
-            final var effectiveDelta = client.getFrameTime();
-            final var entities = mesh.renderInfo().entities();
-            entities.forEach((vec3d, entry) -> {
-                Vec3 worldPos = entry.entity().getPosition(effectiveDelta);
-                Vec3 relative = worldPos.subtract(mesh.startPos().getX(), mesh.startPos().getY(), mesh.startPos().getZ());
-                if (!isInsideMeshBounds(worldPos, mesh.dimensions())) return;
-                matrices.pushPose();
-                matrices.translate(relative.x, relative.y, relative.z);
-                renderEntity(entry.entity(), effectiveDelta, matrices, immediate, entry.light());
-                matrices.popPose();
-            });
-
-
-            Vec3 playerWorld = client.player.getPosition(effectiveDelta);
-            Vec3 playerRelative = playerWorld.subtract(mesh.startPos().getX(), mesh.startPos().getY(), mesh.startPos().getZ());
-
-            if (isInsideMeshBounds(playerWorld, mesh.dimensions())) {
-                matrices.pushPose();
-                matrices.translate(playerRelative.x, playerRelative.y, playerRelative.z);
-                PlayerRenderer playerRender = (PlayerRenderer) client.getEntityRenderDispatcher().getRenderer(client.player);
-                playerRender.render(client.player, client.player.getViewYRot(effectiveDelta), effectiveDelta, matrices, immediate, light);
-                matrices.popPose();
-            }
-
-            playerRelative = client.player.getPosition(effectiveDelta).subtract(mesh.startPos().getX(), mesh.startPos().getY(), mesh.startPos().getZ());
-            if (isInsideMeshBounds(playerWorld, mesh.dimensions())) {
-                matrices.pushPose();
-                Vec3 diff = Vec3.atLowerCornerOf(mesh.startPos()).subtract(client.player.position());
-                matrices.translate(-diff.x, -diff.y + 1.65, -diff.z);
-
-                client.particleEngine.render(matrices, immediate,
-                        client.gameRenderer.lightTexture(),
-                        client.getEntityRenderDispatcher().camera,
-                        tickDelta
-                );
-                matrices.popPose();
-            }
-
             mesh.render(matrices);
             RenderSystem.disableDepthTest();
         }
@@ -223,16 +156,16 @@ public class AreaProvider extends RenderDataProvider<Pair<BlockPos, BlockPos>> {
         return expanded.contains(relativePos);
     }
 
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void invalidateCache() {
         assert Minecraft.getInstance().level != null;
         mesh = new WorldMesh.Builder(Minecraft.getInstance().level, data.getLeft(), data.getRight())
                 .build();
-        if (mesh.state() == WorldMesh.MeshState.CORRUPT) return;
+        if (mesh.state == WorldMesh.MeshState.CORRUPT) return;
         rebuild();
     }
 
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void rebuild() {
         mesh.scheduleRebuild();
     }

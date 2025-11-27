@@ -27,8 +27,8 @@ public class TextProvider extends RenderDataProvider<Component> {
         super(data);
     }
 
-    public static com.mystic.holographicrenders.client.TextProvider from(Component text) {
-        return new com.mystic.holographicrenders.client.TextProvider(text);
+    public static TextProvider from(Component text) {
+        return new TextProvider(text);
     }
 
     public static void setEntity(ProjectorBlockEntity entity) {
@@ -46,7 +46,7 @@ public class TextProvider extends RenderDataProvider<Component> {
         RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         matrices.translate(0.5, 0.0, 0.5);
 
-        RenderSystem.setShaderColor(1,1,1, entity.getAlpha());
+        RenderSystem.setShaderColor(1, 1, 1, entity.getAlpha());
 
         Player player = Minecraft.getInstance().player;
         if (player != null) {
@@ -78,10 +78,22 @@ public class TextProvider extends RenderDataProvider<Component> {
             matrices.mulPose(Axis.YP.rotationDegrees(90 * (facing == Direction.EAST ? -1 : 1)));
         }
 
-        matrices.scale(0.05f, -0.05f, 0.05f); //TODO make this usable with scaling sliders
-        matrices.translate(-(Minecraft.getInstance().font.width(text) / 2f), -20, 0); //TODO make this usable with translation sliders
+        matrices.scale(0.05f, -0.05f, 0.05f);
+        matrices.translate(-(Minecraft.getInstance().font.width(text) / 2f), -20, 0);
 
-        Minecraft.getInstance().font.drawInBatch(text, 0, 0, color, false, matrices.last().pose(), immediate, Font.DisplayMode.SEE_THROUGH, 0, 0xf000f0); //TODO; fix this
+        Minecraft.getInstance().font.drawInBatch(
+                text.getString(),
+                0,
+                0,
+                color,
+                false,
+                matrices.last().pose(),
+                immediate,
+                Font.DisplayMode.SEE_THROUGH,
+                0,
+                0xf000f0,
+                false
+        );
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
@@ -89,15 +101,20 @@ public class TextProvider extends RenderDataProvider<Component> {
 
     @Override
     protected CompoundTag write(ProjectorBlockEntity be) {
-        CompoundTag NbtCompound = new CompoundTag();
-        NbtCompound.putString("Text", Component.Serializer.toJson(data));
-        return NbtCompound;
+        CompoundTag tag = new CompoundTag();
+        String json = Component.Serializer.toJson(this.data, be.getLevel().registryAccess());
+        tag.putString("Text", json);
+        return tag;
     }
 
     @Override
     protected void read(CompoundTag tag, ProjectorBlockEntity be) {
-        data = Component.Serializer.fromJson(tag.getString("Text"));
+        String json = tag.getString("Text");
+        Component component = Component.Serializer.fromJson(json, be.getLevel().registryAccess());
+        this.data = component != null ? component : Component.empty();
     }
+
+
 
     @Override
     public ResourceLocation getTypeId() {

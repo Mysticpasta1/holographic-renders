@@ -4,20 +4,18 @@ import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.client.EmptyProvider;
 import com.mystic.holographicrenders.client.RenderDataProvider;
 import com.mystic.holographicrenders.client.RenderDataProviderRegistry;
-import com.mystic.holographicrenders.client.TextureProvider;
 import com.mystic.holographicrenders.gui.ImplementedInventory;
 import com.mystic.holographicrenders.gui.ProjectorScreenHandler;
-import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -27,33 +25,60 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.ExecutionException;
-
-public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory, ImplementedInventory {
+public class ProjectorBlockEntity extends BlockEntity implements ImplementedInventory, MenuProvider {
 
     private final NonNullList<ItemStack> inventory = NonNullList.withSize(1, ItemStack.EMPTY);
     private float alpha = 1f;
     private boolean lightEnabled = true;
     private boolean spinEnabled = true;
-    private  RenderDataProvider<?> renderer = EmptyProvider.INSTANCE;
+    private RenderDataProvider<?> renderer = EmptyProvider.INSTANCE;
     private int rotation;
-
-
-    public @NotNull RenderDataProvider<?> getRenderer() {
-        return renderer;
-    }
 
     public ProjectorBlockEntity(BlockPos pos, BlockState state) {
         super(HolographicRenders.PROJECTOR_BLOCK_ENTITY.get(), pos, state);
+    }
+
+    @Override
+    public NonNullList<ItemStack> getItems() {
+        return inventory;
+    }
+
+    public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
+        this.renderer = renderer;
+        if (sync) {
+            this.setChanged();
+        }
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
+        }
+    }
+
+    @Override
+    public boolean stillValid(Player player) {
+        if (this.level == null || this.level.getBlockEntity(this.worldPosition) != this) return false;
+        return player.distanceToSqr(
+                this.worldPosition.getX() + 0.5D,
+                this.worldPosition.getY() + 0.5D,
+                this.worldPosition.getZ() + 0.5D
+        ) <= 64.0D;
     }
 
     public ItemStack getItem() {
         return inventory.get(0);
     }
 
-    public void setItem(ItemStack stack) {
+    public void setItemStack(ItemStack stack) {
         inventory.set(0, stack);
-        this.setChanged();
+        setChanged();
+    }
+
+    public @NotNull RenderDataProvider<?> getRenderer() {
+        return renderer;
     }
 
     public void setAlpha(float alpha) {
@@ -84,58 +109,58 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
         return lightEnabled;
     }
 
-    public int getRotation() {return rotation;}
+    public int getRotation() {
+        return rotation;
+    }
+
     public boolean spinEnabled() {
         return spinEnabled;
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    public void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+
         alpha = tag.getFloat("Alpha");
         lightEnabled = tag.getBoolean("Lights");
         spinEnabled = tag.getBoolean("Spin");
         rotation = tag.getInt("Rotate");
+
         ResourceLocation providerId = ResourceLocation.tryParse(tag.getString("RendererType"));
-        renderer = providerId == null ? EmptyProvider.INSTANCE : RenderDataProviderRegistry.getProvider(renderer, providerId);
+        renderer = providerId == null
+                ? EmptyProvider.INSTANCE
+                : RenderDataProviderRegistry.getProvider(renderer, providerId);
+
         renderer.fromTag(tag, this);
-        inventory.set(0, ItemStack.of(tag.getCompound("Stack")));
+
+        if (tag.contains("Stack")) {
+            inventory.set(0, ItemStack.parseOptional(registries, tag.getCompound("Stack")));
+        } else {
+            inventory.set(0, ItemStack.EMPTY);
+        }
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    public void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+
         tag.putFloat("Alpha", alpha);
         tag.putBoolean("Lights", lightEnabled);
         tag.putBoolean("Spin", spinEnabled);
         tag.putInt("Rotate", rotation);
-        tag.put("Stack", getItem().save(new CompoundTag()));
+
+        tag.putString("RendererType", renderer.getTypeId().toString());
         renderer.toTag(tag, this);
-        super.saveAdditional(tag);
-    }
 
-    public void setRenderer(@NotNull RenderDataProvider<?> renderer, boolean sync) {
-        this.renderer = renderer;
-        if (sync) {
-            this.setChanged();
+        ItemStack stack = getItem();
+        if (!stack.isEmpty()) {
+            tag.put("Stack", stack.save(registries));
         }
-    }
-
-    @Override
-    public void setChanged() {
-        super.setChanged();
-        if (!level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
-        }
-    }
-
-    @Override
-    public NonNullList<ItemStack> getItems() {
-        return inventory;
     }
 
     @Override
     public Component getDisplayName() {
-        return Component.literal(getBlockState().getBlock().getDescriptionId());
+        return Component.translatable(getBlockState().getBlock().getDescriptionId());
     }
 
     @Nullable
@@ -144,19 +169,15 @@ public class ProjectorBlockEntity extends BlockEntity implements ExtendedScreenH
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    public CompoundTag getUpdateTag() {
-        var nbt = new CompoundTag();
-        saveAdditional(nbt);
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag nbt = new CompoundTag();
+        saveAdditional(nbt, registries);
         return nbt;
     }
 
     @Override
     public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
         return new ProjectorScreenHandler(syncId, playerInventory, this);
-    }
-
-    @Override
-    public void writeScreenOpeningData(ServerPlayer player, FriendlyByteBuf buf) {
-        buf.writeBlockPos(this.getBlockPos());
     }
 }

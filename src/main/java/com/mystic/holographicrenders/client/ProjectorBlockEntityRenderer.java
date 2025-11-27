@@ -103,15 +103,15 @@ public class ProjectorBlockEntityRenderer implements BlockEntityRenderer<Project
 
         if (entity.getAlpha() != 0) {
             try {
+                matrices.pushPose();
                 ItemProjectionHandler.getDataProvider(entity, entity.getItem()).render(matrices, immediate, tickDelta, light, overlay, entity);
                 immediate.endBatch();
-            } catch (MalformedURLException ignored) {
-                // Consider logging or handling for debugging purposes
-            }
+                matrices.popPose();
+            } catch (MalformedURLException ignored) {}
         }
     }
 
     private void vertex(Matrix4f matrix, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a) {
-        buffer.vertex(matrix, x, y, z).color(r, g, b, a).endVertex();
+        buffer.addVertex(matrix, x, y, z).setColor(r, g, b, a);
     }
 }

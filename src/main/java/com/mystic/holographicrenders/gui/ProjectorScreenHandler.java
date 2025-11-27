@@ -2,12 +2,10 @@ package com.mystic.holographicrenders.gui;
 
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import com.mystic.holographicrenders.network.ProjectorPackets;
+import io.netty.buffer.Unpooled;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -18,9 +16,14 @@ public class ProjectorScreenHandler extends AbstractContainerMenu {
 
     private final ProjectorBlockEntity blockEntity;
 
-    public ProjectorScreenHandler(int syncId, Inventory playerInventory, ProjectorBlockEntity blockEntity) {
+    private static FriendlyByteBuf writePos(BlockPos pos) {
+        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        buf.writeBlockPos(pos);
+        return buf;
+    }
 
-        this(syncId, playerInventory, PacketByteBufs.create().writeBlockPos(blockEntity.getBlockPos()));
+    public ProjectorScreenHandler(int syncId, Inventory playerInventory, ProjectorBlockEntity blockEntity) {
+        this(syncId, playerInventory, writePos(blockEntity.getBlockPos()));
     }
 
     public ProjectorScreenHandler(int syncId, Inventory playerInventory, FriendlyByteBuf buffer) {
@@ -75,10 +78,10 @@ public class ProjectorScreenHandler extends AbstractContainerMenu {
 
     public void setLight(boolean lights) {
         if (blockEntity.getLevel().isClientSide) {
-            FriendlyByteBuf buf = PacketByteBufs.create();
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeBlockPos(blockEntity.getBlockPos());
             buf.writeBoolean(lights);
-            ClientPlayNetworking.send(ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "light_packet"), buf);
+            ProjectorPackets.sendLightChange(blockEntity.getBlockPos(), lights);
         } else {
             blockEntity.setLightEnabled(lights);
         }
@@ -90,10 +93,10 @@ public class ProjectorScreenHandler extends AbstractContainerMenu {
 
     public void setSpin(boolean spin) {
         if (blockEntity.getLevel().isClientSide) {
-            FriendlyByteBuf buf = PacketByteBufs.create();
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeBlockPos(blockEntity.getBlockPos());
             buf.writeBoolean(spin);
-            ClientPlayNetworking.send(ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "spin_packet"), buf);
+            ProjectorPackets.sendSpinChange(blockEntity.getBlockPos(), spin);
         } else {
             blockEntity.setSpinEnabled(spin);
         }
@@ -105,10 +108,10 @@ public class ProjectorScreenHandler extends AbstractContainerMenu {
 
     public void setRotate(int rotate) {
         if (blockEntity.getLevel().isClientSide) {
-            FriendlyByteBuf buf = PacketByteBufs.create();
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
             buf.writeBlockPos(blockEntity.getBlockPos());
             buf.writeInt(rotate);
-            ClientPlayNetworking.send(ResourceLocation.fromNamespaceAndPath(HolographicRenders.MOD_ID, "rotate_packet"), buf);
+            ProjectorPackets.sendRotateChange(blockEntity.getBlockPos(), rotate);
         } else {
             blockEntity.setRotation(rotate);
         }

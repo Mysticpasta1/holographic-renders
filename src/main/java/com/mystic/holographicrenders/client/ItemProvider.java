@@ -6,8 +6,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.mystic.holographicrenders.HolographicRenders;
 import com.mystic.holographicrenders.blocks.projector.ProjectorBlockEntity;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.nbt.CompoundTag;
@@ -15,6 +13,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 public class ItemProvider extends RenderDataProvider<ItemStack> {
 
@@ -34,7 +34,7 @@ public class ItemProvider extends RenderDataProvider<ItemStack> {
     }
 
     @Override
-    @Environment(EnvType.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void render(PoseStack matrices, MultiBufferSource.BufferSource immediate, float tickDelta, int light, int overlay, BlockEntity be) {
         RenderSystem.enableBlend();
         RenderSystem.enableDepthTest();
@@ -51,17 +51,28 @@ public class ItemProvider extends RenderDataProvider<ItemStack> {
     }
 
     @Override
-    public CompoundTag write(ProjectorBlockEntity be) {
+    protected CompoundTag write(ProjectorBlockEntity be) {
         CompoundTag tag = new CompoundTag();
-        CompoundTag itemTag = new CompoundTag();
-        data.save(itemTag);
-        tag.put("Item", itemTag);
+
+        if (!this.data.isEmpty() && be.getLevel() != null) {
+            CompoundTag itemTag = new CompoundTag();
+            this.data.save(be.getLevel().registryAccess(), itemTag);
+            tag.put("Item", itemTag);
+        }
+
         return tag;
     }
 
     @Override
-    public void read(CompoundTag tag, ProjectorBlockEntity be) {
-        data = ItemStack.of(tag.getCompound("Item"));
+    protected void read(CompoundTag tag, ProjectorBlockEntity be) {
+        if (tag.contains("Item") && be.getLevel() != null) {
+            this.data = ItemStack.parse(
+                    be.getLevel().registryAccess(),
+                    tag.getCompound("Item")
+            ).orElse(ItemStack.EMPTY);
+        } else {
+            this.data = ItemStack.EMPTY;
+        }
     }
 
     @Override

@@ -42,7 +42,7 @@ public abstract class ArmorStandMixin {
                 } else if (player.level().isClientSide) {
                     cir.setReturnValue(InteractionResult.CONSUME);
                 } else {
-                    EquipmentSlot equipmentSlot = Mob.getEquipmentSlotForItem(itemStack);
+                    EquipmentSlot equipmentSlot = Mob.getSlotForHand(hand);
                     if (itemStack.isEmpty()) {
                         EquipmentSlot equipmentSlot2 = this.getClickedSlot(hitPos);
                         EquipmentSlot equipmentSlot3 = this.isDisabled(equipmentSlot2) ? equipmentSlot : equipmentSlot2;

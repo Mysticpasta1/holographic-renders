@@ -1,11 +1,7 @@
 package com.mystic.holographicrenders.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mystic.holographicrenders.network.LightPacket;
-import com.mystic.holographicrenders.network.RotatePacket;
-import com.mystic.holographicrenders.network.SpinPacket;
-import java.util.Objects;
-import java.util.function.Consumer;
+import com.mystic.holographicrenders.network.ProjectorPackets;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
@@ -16,8 +12,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 public class ProjectorScreen extends AbstractContainerScreen<ProjectorScreenHandler> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath("holographic_renders", "textures/gui_hologram_projector.png");
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath("holographic_renders", "textures/gui_hologram_projector.png");
 
     private boolean lightsEnabled = false;
     private boolean spinEnabled;
@@ -38,7 +39,7 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorScreenHand
 
     @Override
     public void render(GuiGraphics matrices, int mouseX, int mouseY, float delta) {
-        renderBackground(matrices);
+        renderBackground(matrices, mouseX, mouseY, delta);
         super.render(matrices, mouseX, mouseY, delta);
         renderTooltip(matrices, mouseX, mouseY);
     }
@@ -50,18 +51,36 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorScreenHand
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 
-        Checkbox lightCheckbox = new CallbackCheckboxWidget(x + 110, y + 33, Component.nullToEmpty("Light"), lightsEnabled, light -> {
-            assert minecraft != null;
-            Objects.requireNonNull(minecraft.getConnection()).send(LightPacket.createLightAction(light));
-        });
-        Checkbox spinCheckbox = new CallbackCheckboxWidget(x + 110, y + 60, Component.nullToEmpty("Spin"), spinEnabled, spin -> {
-            assert minecraft != null;
-            Objects.requireNonNull(minecraft.getConnection()).send(SpinPacket.createSpinAction(spin));
-        });
-        AbstractSliderButton rotation = new CallbackSliderWidget(x + 70, y + 6, 100, 20, Component.nullToEmpty("Rotation: " + rotationInt), rotationInt, rotate -> {
-            assert minecraft != null;
-            Objects.requireNonNull(minecraft.getConnection()).send(RotatePacket.createRotateAction(rotate));
-        });
+        Checkbox lightCheckbox = Checkbox.builder(Component.nullToEmpty("Light"), this.font)
+                .pos(x + 110, y + 33)
+                .selected(lightsEnabled)
+                .onValueChange((checkbox, checked) -> {
+                    this.lightsEnabled = checked;
+                    ProjectorPackets.sendSetLightToServer(checked);
+                })
+                .build();
+
+        Checkbox spinCheckbox = Checkbox.builder(Component.nullToEmpty("Spin"), this.font)
+                .pos(x + 110, y + 60)
+                .selected(spinEnabled)
+                .onValueChange((checkbox, checked) -> {
+                    this.spinEnabled = checked;
+                    ProjectorPackets.sendSetSpinToServer(checked);
+                })
+                .build();
+
+        AbstractSliderButton rotation = new CallbackSliderWidget(
+                x + 70,
+                y + 6,
+                100,
+                20,
+                Component.nullToEmpty("Rotation: " + rotationInt),
+                rotationInt,
+                rotate -> {
+                    this.rotationInt = rotate;
+                    ProjectorPackets.sendSetRotateToServer(rotate);
+                });
+
         addRenderableWidget(spinCheckbox);
         addRenderableWidget(lightCheckbox);
         addRenderableWidget(rotation);
@@ -86,27 +105,12 @@ public class ProjectorScreen extends AbstractContainerScreen<ProjectorScreenHand
         this.init(Minecraft.getInstance(), this.width, this.height);
     }
 
-    protected static class CallbackCheckboxWidget extends Checkbox {
-
-        private final Consumer<Boolean> changeCallback;
-
-        public CallbackCheckboxWidget(int x, int y, Component message, boolean checked, Consumer<Boolean> changeCallback) {
-            super(x, y, 20, 20, message, checked);
-            this.changeCallback = changeCallback;
-        }
-
-        @Override
-        public void onPress() {
-            super.onPress();
-            changeCallback.accept(selected());
-        }
-    }
-
     protected static class CallbackSliderWidget extends AbstractSliderButton {
 
         private final Consumer<Integer> changeCallback;
 
-        public CallbackSliderWidget(int x, int y, int width, int height, Component text, double value, Consumer<Integer> changeCallback) {
+        public CallbackSliderWidget(int x, int y, int width, int height, Component text,
+                                    double value, Consumer<Integer> changeCallback) {
             super(x, y, width, height, text, value);
             this.changeCallback = changeCallback;
         }
