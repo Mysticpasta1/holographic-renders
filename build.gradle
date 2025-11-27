@@ -98,6 +98,7 @@ repositories {
 dependencies {
     implementation "curse.maven:watermedia-869524:7072353"
     implementation 'com.github.Mysticpasta1:worldmesher:c404392c37'
+    jarJar 'com.github.Mysticpasta1:worldmesher:c404392c37'
     compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
     runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
 }
